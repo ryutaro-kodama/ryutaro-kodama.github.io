@@ -30,7 +30,7 @@ h1:before {
 }
 
 
-h2 {
+h2, .h2_accordion{
   background: linear-gradient(#F3F5F5, #fff);
   background: -o-linear-gradient(#F3F5F5, #fff);
   background: -ms-linear-gradient(#F3F5F5, #fff);
