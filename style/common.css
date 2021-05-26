@@ -5,3 +5,12 @@ body {
 	line-height: var(--vscode-markdown-line-height, 22px);
 	word-wrap: break-word;
 }
+
+.flex {
+	display: flex;
+}
+
+.sticky {
+	position: sticky;
+	top: 15px;
+}
