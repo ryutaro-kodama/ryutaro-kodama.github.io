@@ -882,6 +882,46 @@
           <li>self-modifying codeの"よくあるパターン"の認識によって除去する</li>
           <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self_modifying_code_pattarn_recognition.svg" alt="" width="300px"></li>
         </ul>
+        <li>変更される箇所が少ない場合</li>
+        <ul>
+          <li>ex.) デバイスに依存しないドライバ</li>
+          <li>様々なソースコードのバージョンと、その翻訳結果のコードをペアで保存</li>
+          <li>オーバーヘッドは大きいが、再翻訳の繰り返しは避けられる</li>
+        </ul>
+      </ul>
+
+      <h4>Protecting Runtime Memory</h4>
+      <ul>
+        <li>runtimeはguest上のアプリケーションと同じメモリ空間を共有している</li>
+        <ul>
+          <li>アプリケーションからruntimeへの書き込みを防がなくてはいけない</li>
+        </ul>
+        <li>software translation tableを用いている場合：</li>
+        <ul>
+          <li>tableにアクセス権限情報を付加すればよい</li>
+          <ul>
+            <li>(遅い)</li>
+          </ul>
+        </ul>
+        <li>もっと速く行いたい</li>
+        <ul>
+          <li>ex.) Omniware VM</li>
+          <li>segment sizeを2の累乗に限定</li>
+          <ul>
+            <li>最後の1bitがフリー</li>
+            <li>この1bitで書き込み権限を表す</li>
+            <li></li>
+          </ul>
+          <li>activeなsegmentが常に1つという仮定がある場合</li>
+          <ul>
+            <li>そのsegmentのアドレスをレジスタに保存</li>
+          </ul>
+          <li>その他諸々の技術を用いて、10%のオーバーヘッド削減</li>
+          <li>「segment sizeを2の累乗に限定」によって追加のアドレス空間の制限が発生する可能性がある</li>
+          <ul>
+            <li>intrinsic compatibilityが失われる可能性がある</li>
+          </ul>
+        </ul>
       </ul>
 
 
