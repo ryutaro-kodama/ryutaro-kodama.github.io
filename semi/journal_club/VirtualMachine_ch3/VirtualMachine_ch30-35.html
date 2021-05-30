@@ -6,6 +6,11 @@
 	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+  <style>
+    .right-separate {
+      border-right: 3px double black;
+    }
+  </style>
 </head>
 
 <body>
@@ -43,7 +48,7 @@
     <ul>
       <li>本章ではprocess VMの視点からVMを見ていく</li>
       <ul>
-        <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-26-09-55-21.png" width="400px"></li>
+        <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_vm_structure.svg" width="400px"></li>
       </ul>
       <li>process VMのメリット</li>
       <ul>
@@ -54,7 +59,6 @@
       <div class="flex">
         <div class="flex-left">
           <ul>
-            
             <li>Host Process: Host system上で動くプロセス</li>
             <li>Guest Process: Host system上で動かないプロセス</li>
             <li>runtimeがGuest processをカプセル化</li>
@@ -64,7 +68,7 @@
             </ul>
           </ul>
         </div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-26-10-04-37.png" width="500px" class="flex-right">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/guest_process_interacting_with_host_process.svg" width="400px" class="flex-right">
       </div>
     </ul>
     <strong>こういったprocess VMはどんな要素から構成される？</strong>
@@ -73,28 +77,252 @@
   <div id="3.1 Virtual Machine Implementation">
     <h2>3.1 Virtual Machine Implementation</h2>
     <p>process VMの構造を見ていく</p>
-    <ol>
-      <li>初期化に関する部分</li>
-      <li>emulationに関する部分</li>
-    </ol>
+    <svg x="0" y="0" width="720px" height="500px" style="background-color: #ddd">
+      <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+      </marker>
+      <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+      </marker>
+      <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+      <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+      <text x="60" y="70">Loader</text>
+
+      <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+      <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+      <text x="207" y="70">Guest Memory Image</text>
+
+      <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+      <text x="40" y="170">Initialization</text>
+
+      <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+      <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+      <text x="220" y="170">Emulation Engine</text>
+      <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+      <text x="220" y="210">Translator</text>
+      <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+      <text x="220" y="240">Interpreter</text>
+      <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+      
+      <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+      
+      <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+      <text x="125" y="250">Profile</text>
+      <text x="130" y="270">Data</text>
+
+      <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+      <text x="420" y="215">Code Cache</text>
+      <text x="430" y="235">Manager</text>
+
+      <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+      <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+      <text x="600" y="200">Code Cache</text>
+
+      <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+      <text x="220" y="335">OS Call Emulator</text>
+
+      <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+      <text x="425" y="325">Exception</text>
+      <text x="425" y="345">Emulation</text>
+
+      <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+      <text x="585" y="325">Exception</text>
+      <text x="580" y="345">Side Tables</text>
+      
+      <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+      <text x="25" y="280">Initialize</text>
+      <text x="25" y="300">signals</text>
+      <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+      <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+      <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+      <text x="300" y="440">Host Operation System</text>
+    </svg>
     <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure1-1.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 1-1</strong>
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+  
+        <rect x="30" y="40" width="100" height="50" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="60" y="70">Loader</text>
+  
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="red" stroke-width="2" fill="#fff" />
+  
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+  
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+  
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+  
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+  
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+  
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+  
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+  
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+  
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>事前準備</strong>
         <ul>
           <li>Loader -> Guest Memory Imageにguest codeとdataを書き込む</li>
-          <li>(guest codeをそのまま実行するわけではないため、runtimeからはguest codeもinput "data"と見ることができる)</li>
+          <li>(guest codeをそのまま実行するわけではない：</li>
+          <ul>
+            <li>runtimeからはguest codeもinput "data"と見ることができる)</li>
+          </ul>
         </ul>
       </div>
     </div>
     <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure1-2.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 1-2</strong>
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+        <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+        <text x="60" y="70">Loader</text>
+
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="140" width="120" height="50" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="red" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>Initialization</strong>
         <ul>
           <li>Initialization</li>
           <ul>
@@ -105,24 +333,172 @@
       </div>
     </div>
     <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure2.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 2</strong>
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+        <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+        <text x="60" y="70">Loader</text>
+
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="140" width="130" height="110" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="red" stroke-width="2" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="red" stroke-width="2" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="red" stroke-width="2" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke="black" fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="190" width="130" height="60" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>Emulation process</strong>
         <ul>
           <li>Emulation Engineがguest codeを変換</li>
           <li>変換されたコードはCode Cacheに保存</li>
-          <li>(Code Cacheの容量は小さいので、Code Cache ManagerがCode Cacheの管理を行う)</li>
+          <li>(Code Cache ManagerがCode Cacheを管理)</li>
         </ul>
       </div>
     </div>
     <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure2+.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 2+</strong>
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+        <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+        <text x="60" y="70">Loader</text>
+
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>Emulation process(Profile Data)</strong>
         <ul>
           <li>Profile Dataは動的にプログラム情報を集める</li>
           <li>最適化のために使う(詳しくは4章)</li>
@@ -130,11 +506,86 @@
       </div>
     </div>
     <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure2-1.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 2-1</strong>
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+        <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+        <text x="60" y="70">Loader</text>
+
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="300" width="130" height="60" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="300" width="130" height="60" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="red" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="red" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>Emulation process(system call/exception)</strong>
         <ul>
           <li>system call</li>
           <ul>
@@ -143,18 +594,91 @@
           <li>exception</li>
           <ul>
             <li>Exception Emulatorが適切に対処</li>
-            <li>(EmulatoeでのException、Host OSからのinterruptionともに適切に対処)</li>
-            <li>Exceptionが発生したときに正しいguestの状態にできるように気を配るのが大切</li>
+            <li>(EmulatorでのException、Host OSからのinterruptionともに対処)</li>
+            <li>Exceptionが発生したときに正しいguestの状態を把握するのが大切</li>
           </ul>
         </ul>
       </div>
-    </div>
-    <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
-      <div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/process_VM_structure2-2.png" width="600px" height="450px">
-      </div>
-      <div>
-        <strong>step 2-2</strong>
+    </div>    <div class="flex" style="border-top: 1px dashed black; padding: 10px 0px;">
+      <svg x="0" y="0" width="720px" height="500px" class="flex-left" style="background-color: #ddd">
+        <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+        </marker>
+        <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+        </marker>
+        <!-- <line id="line1" x1="-50" y1="-50" x2="50" y2="50" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4 4"/> -->
+
+        <rect x="30" y="40" width="100" height="50" stroke=black fill="#fff" />
+        <text x="60" y="70">Loader</text>
+
+        <polygon points="130 55, 185 55, 185 45, 200 65, 185 85, 185 75, 130 75" stroke="black" fill="#fff" />
+
+        <rect x="200" y="25" width="150" height="80" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="207" y="70">Guest Memory Image</text>
+
+        <line id="L_I" x1="80" y1="90" x2="80" y2="140" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="140" width="120" height="50" stroke=black fill="#fff" />
+        <text x="40" y="170">Initialization</text>
+
+        <line id="GMI_EE" x1="275" y1="105" x2="275" y2="140" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="I_EE" x1="140" y1="165" x2="210" y2="165" stroke="black" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="140" width="130" height="110" stroke=black fill="#fff" />
+        <text x="220" y="170">Emulation Engine</text>
+        <line x1="210" y1="190" x2="295" y2="190" stroke="black" stroke-width="1" />
+        <text x="220" y="210">Translator</text>
+        <line x1="210" y1="220" x2="295" y2="220" stroke="black" stroke-width="1" />
+        <text x="220" y="240">Interpreter</text>
+        <line x1="295" y1="250" x2="295" y2="190" stroke="black" stroke-width="1" />
+        
+        <line id="EE_PD" x1="210" y1="220" x2="180" y2="255" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        
+        <rect x="110" y="230" width="70" height="50" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="125" y="250">Profile</text>
+        <text x="130" y="270">Data</text>
+
+        <line id="EE_CCM" x1="340" y1="220" x2="390" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="190" width="130" height="60" stroke=black fill="#fff" />
+        <text x="420" y="215">Code Cache</text>
+        <text x="430" y="235">Manager</text>
+
+        <line id="CCM_CC" x1="520" y1="220" x2="570" y2="220" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_CC" x1="340" y1="170" x2="570" y2="170" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="140" width="130" height="110" rx="5" ry="5" stroke=black fill="#fff" />
+        <text x="600" y="200">Code Cache</text>
+
+        <line id="EE_OCE" x1="275" y1="250" x2="275" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="210" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="220" y="335">OS Call Emulator</text>
+
+        <line id="EE_EE" x1="340" y1="250" x2="390" y2="300" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="390" y="300" width="130" height="60" stroke=black fill="#fff" />
+        <text x="425" y="325">Exception</text>
+        <text x="425" y="345">Emulation</text>
+
+        <line id="EE_EST" x1="520" y1="330" x2="570" y2="330" stroke="red" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="570" y="305" width="90" height="50" rx="5" ry="5" stroke="red" stroke-width="2" fill="#fff" />
+        <text x="585" y="325">Exception</text>
+        <text x="580" y="345">Side Tables</text>
+        
+        <line id="I_HOS" x1="80" y1="190" x2="80" y2="410" stroke="black" stroke-style="dashed" marker-end="url(#marker-end)" stroke-width="1" stroke-dasharray="4"/>
+        <text x="25" y="280">Initialize</text>
+        <text x="25" y="300">signals</text>
+        <line id="OSE_HOS" x1="275" y1="360" x2="275" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+        <line id="EE_HOS" x1="455" y1="360" x2="455" y2="410" stroke="black" stroke-style="dashed" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+
+        <rect x="20" y="410" width="680" height="50" stroke=black fill="#fff" />
+        <text x="300" y="440">Host Operation System</text>
+      </svg>
+      <div class="flex-right" style="width: 300px;">
+        <strong>Emulation process(Side Tables)</strong>
         <ul>
           <li>side table</li>
           <ul>
@@ -246,15 +770,16 @@
       <ul>
         <li>compatibilityの厳密な証明は難しい</li>
         <ul>
+          <li>ex.) テストの繰り返し</li>
           <li>compatibilityについての"着目点"や"条件"が欲しい</li>
           <li>process VMを構造化</li>
           <ul>
-            <li>各パーツについて詳細を考える</li>
+            <li>各パーツについて"条件"を考える</li>
           </ul>
         </ul>
       </ul>
-      <p>
-        compatibilityとはguestとhost間で「状態の対応関係があるか」と考えることができる<br>
+      <p style="border-top: 1px dashed black">
+        compatibilityを考えるには、guestとhost間で「状態の対応関係」を考えたい<br>
         その「状態」を細分化しておく
       </p>
       <table align="center" border="1">
@@ -319,24 +844,25 @@
       <ul>
         <li>compatibility frameworkの大事なところ：</li>
         <ul>
-          <li>user-managed stateとOS-managed state間で制御が遷移する場所</li>
+          <li>user-managed stateとOS-managed state間でcontrol transfer point</li>
           <li>(注意点：native platformでOSを呼ぶ ≠ VM上でhost OSを呼ぶ)</li>
-          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-26-16-25-01.png" alt=""></li>
+          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/correspondence_of_control_transfers.svg" alt=""></li>
         </ul>
-        <li>制御遷移地点での1対1のマッピングを確立することが、process VMに課している要件の一部</li>
+        <li>process VMに課している要件(の1つ)</li>
         <ul>
+          <li><strong>control transfer pointでの1対1のマッピングの確立</strong></li>
           <li>(大抵のprocess VMでは確立されている)</li>
         </ul>
         <!-- <li>以下、このマッピングがあれば、制御遷移地点でのstateが同等であることに注目</li> -->
       </ul>
 
       <h4>Sufficient Compatibility Conditions</h4>
-      制御の遷移に対応する場所が分かる場合を仮定する。compatibilityに関する次の条件が与えられる。
-      <ol>
-        <li>制御が移ったところのみ、guest stateとhost stateが合っているか確認しなければならない</li>
+      control transfer pointが分かる場合を仮定する。compatibilityに関する次の条件が与えられる。
+      <ul>
+        <li>control transfer pointでは、guest stateとhost stateが合っている</li>
         <ul>
           <li>＝「外界とふれるところ」でのみ確認すればいい</li>
-          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-26-17-05-42.png" alt=""></li>
+          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/check_compatibility_on_control_transfer_point.svg" alt=""></li>
           <li>命令1つ1つ毎にマッピングが正しいか確認しなくてよい</li>
           <ul>
             <li>命令のemulationの仕方に自由度が生まれる</li>
@@ -349,22 +875,20 @@
             <li>メモリの一部を変更する場合でも、全てのメモリが等しいことを要求</li>
           </ul>
         </ul>
-
-        <li>制御がuser instructionに戻った時点で、guest stateはhost stateと同等にならなければならない</li>
         <!-- <ul>
           <li>OSの動作の一部については、制御の遷移場所での状態と等しくなるような、operationの順番が必要なことがある</li>
           <ul>
             <li>graphics terminalやnetwork interfaceの駆動など</li>
           </ul>
         </ul> -->
-      </ol>
+      </ul>
 
       <h4>Discussion</h4>
       <ul>
         <li>前述の条件について</li>
         <ul>
-          <li>「compatibilityの枠組みの条件」はVMが構造化されてる前提</li>
-          <li>前述の条件はcompatibilityのための"十分条件"("必要条件でない")</li>
+          <li>「compatibilityの枠組みの条件」はVMが特定の方法で構造化されてる前提</li>
+          <li>前述の条件はcompatibilityのための"十分条件"("必要条件"ではない)</li>
           <ul>
             <li>必ずしも満たされなくてもよい</li>
             <li>このような取り決めがあれば、簡単に問題が解決できることもある(ということが大事)</li>
@@ -385,23 +909,26 @@
       <h3>3.2.3 Implementation Dependences</h3>
       <ul>
         <li>機能が実装依存な場合、emulationを困難にすることがある</li>
-        <li>ex.) 自己修正コードを実行した時のcacheの挙動</li>
-        <ul>
-          <li>cacheのupdateやflushを行わないプロセッサがある</li>
+        <li>ex.) self-modifying codeを実行した時のcacheの挙動</li>
+        <details>
+          <summary>いろいろな対策</summary>
           <ul>
-            <li>コンテキストスイッチ等のcacheに影響を与えるイベントにプログラムの結果が依存する</li>
+            <li>cacheのupdateやflushを行わないプロセッサがある</li>
+            <ul>
+              <li>コンテキストスイッチ等のcacheに影響を与えるイベントにプログラムの結果が依存する(のでemulationしにくい)</li>
+            </ul>
+            <li>自分のソフトウェアを実行しているプロセッサの実装を正確に特定し、適切にcacheを管理するコードもある</li>
+            <ul>
+              <li>VM上にのみ存在してHostのものではないハードウェアを特定してしまうと、意図しない動作になる</li>
+            </ul>
+            <li>VMの実装を、自己修正コードを実行した時に必ずflushするようにすれば？</li>
+            <ul>
+              <li>ISAの仕様では、自己修正コードは、特定の命令を実行してキャッシュが明示的にフラッシュされた場合にのみ、その効果が保証され、そうでない場合は結果が不定になる</li>
+              <li>適切にflushしない自己修正コードであっても、実際の実装では「動作する」ものがあるかもしれない</li>
+              <li>明示的なflushを伴わない自己修正コードが、VM上で異なる動作をしてしまう</li>
+            </ul>
           </ul>
-          <li>自分のソフトウェアを実行しているプロセッサの実装を正確に特定し、適切にcacheを管理するコードもある</li>
-          <ul>
-            <li>VM上にのみ存在してHostのものではないハードウェアを特定してしまうと、意図しない動作になる</li>
-          </ul>
-          <li>VMの実装を、自己修正コードを実行した時に必ずflushするようにすれば？</li>
-          <ul>
-            <li>ISAの仕様では、自己修正コードは、特定の命令を実行してキャッシュが明示的にフラッシュされた場合にのみ、その効果が保証され、そうでない場合は結果が不定になる</li>
-            <li>適切にflushしない自己修正コードであっても、実際の実装では「動作する」ものがあるかもしれない</li>
-            <li>明示的なflushを伴わない自己修正コードが、VM上で異なる動作をしてしまう</li>
-          </ul>
-        </ul>
+        </details>
         <li>良い解決策はない</li>
         <ul>
           <li>VMの開発者はアーキテクチャやハードウェアの仕様を熟読してね</li>
@@ -414,7 +941,7 @@
     <h2>3.3 State Mapping</h2>
     <p>ここからVMの細かい実装を見ていく。まずはuser-managed stateのマッピングから</p>
     <div class="flex">
-      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-00-23-17.png" alt="">
+      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/overview_of_state_mapping.svg" alt="" width="300px">
       <div>
         <p>stateのマッピングは例えば左図のようになる</p>
         <ul>
@@ -434,10 +961,7 @@
         <li>guest register数 ＜ host register数</li>
         <ul>
           <li>全てのguest registerをhost registerにマッピング可能</li>
-          <li>runtimeはregisterの内容をmemory(context block)に保存している</li>
-          <ul>
-            <li>emulatorはemulation以外のタスク時は、registerの大部分を使用可能</li>
-          </ul>
+          <li>emulationをしない時は、registerの内容をmemory(context block)に保存可能</li>
         </ul>
         <li>guest register数 ＝ host register数</li>
         <ul>
@@ -450,7 +974,7 @@
         <li>guest register数 ＞ host register数</li>
         <ul>
           <li>registerの一部はcontext blockに保存される</li>
-          <li>runtimeがhost register 空間を管理する</li>
+          <li>runtimeがhost register空間を管理する</li>
         </ul>
       </ul>
     </div>
@@ -461,7 +985,7 @@
         <li>guest address spaceをhost address spaceにマッピングするのは、runtimeの仕事</li>
         <ul>
           <li>
-            <svg x=0 y=0 width=440 height=150 style="background-color: #ddd">
+            <svg x="0" y="0" width="440px" height="130px" style="background-color: #ddd;">
               <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
                 <path d="M -10 0 L 0 -5 L 0 5 Z"/>
               </marker>
@@ -492,38 +1016,86 @@
         </ul>
         <!-- <li>Just as with instruction emulation, there is a range of possibilities for performing address space mapping spanning different performance levels, determined by the relative amount of emulation performed by software compared to the amount performed directly on the host hardware</li>   -->
       </ul>
+      <p>2種類の方法で、state mappingを実装する方法を見る</p>
 
       <h4>Runtime Software-Suppoerted Translation Tables</h4>
-      <p><strong>(runtimeのsoftware主導のtranslation方法を見ていく)</strong></p>
-      <p>memory architecture emulationの最も柔軟性に富む例</p>
-      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-13-23-41.png" alt="" width="500px">
-      <ul>
-        <li>translation tableはruntimeに管理される</li>
-        <!-- <li>guest addressはhost空間の隣接区域にマッピングされなくてもよい</li> -->
-        <li>guest address spaceはブロックへ分割されて管理される</li>
-        <ul>
-          <li>各ブロックはhostの数ページ分に対応</li>
-        </ul>
-      </ul>
+      <p><strong>(runtimeのsoftware主導のtranslation方法)</strong></p>
+      <div class="flex">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/software_translation_table.svg" alt="" width="250px" class="flex-left">
+        <div class="flex-right">
+          <ul>
+            <li>memory architecture emulationの最も柔軟性に富む方法</li>
+            <li>guest address spaceはブロックへ分割されて管理される</li>
+            <ul>
+              <li>各ブロックはhostの数ページ分に対応</li>
+            </ul>
+            <li>translation tableはruntimeに管理される</li>
+            <!-- <li>guest addressはhost空間の隣接区域にマッピングされなくてもよい</li> -->
+          </ul>
+        </div>
+      </div>
       <p>ex.) translation tableを使った、load命令emulation</p>
       <ul>
-        <li>1blockは64KB(=2^16B)</li>
-        <li>translation tableのbase addressはr30レジスタに格納されている</li>
-        <li>guest(source) addressはr1レジスタに格納されている</li>
-        <li>32bitアドレス空間</li>
+        <li>前提</li>
+        <ul>
+          <li>1blockは64KB(=2^16B)</li>
+          <li>translation tableのbase addressはr30レジスタに格納されている</li>
+          <li>guest(source) addressはr1レジスタに格納されている</li>
+          <li>32bitアドレス空間</li>
+        </ul>
+        <li>着目点</li>
+        <ul>
+          <li>hostでもguestでも、block entry addressからのoffsetが同じ</li>
+          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/load_emulation1.svg" alt="" width="700px"></li>
+        </ul>
+        <li>変換方法</li>
+        <ul>
+          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/load_emulation2.svg" alt="" width="700px"></li>
+        </ul>
+        <li>
+          <details>
+            <summary>どうして2bitズラす？</summary>
+          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/load_emulation3.svg" alt="" width="700px"></li>
+          </details>
+        </li>
       </ul>
-      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/how_to_load_mapping_memory.svg" alt="" width="650px">
       <p>論理アドレスと物理アドレスの割り当てに似ている。。。</p>
       <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-15-04-30.png" alt="" width="650px">
       <ul>
         <li>guest memory blockがhost memory内に存在しないこともある</li>
-        <ul>
-          <li>translation tableには、「アクセスされたguest blockがhost address space内に存在するか」を表す"valid" bitがある</li>
-          <li>invalidの場合、memory managerがディスクとの間で入れ替えを行う</li>
-          <ul>
-            <li>これに伴いtranslation tableも変更</li>
+        <div class="flex">
+          <ul class="flex-left">
+            <li>translation tableには、「アクセスされたguest blockがhost address space内に存在するか」を表す"valid" bitがある</li>
+            <li>invalidの場合、memory managerがディスクとの間で入れ替えを行う</li>
+            <ul>
+              <li>これに伴いtranslation tableも変更</li>
+            </ul>
           </ul>
-        </ul>
+          <table class="flex-right" border="1" style="border-collapse: collapse;">
+            <thead>
+              <th class="right-separate">guest address</th>
+              <th>host address</th>
+              <th>is in memory?</th>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="right-separate">1111</td>
+                <td>aaaa</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td class="right-separate">2222</td>
+                <td>bbbb</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td class="right-separate">...</td>
+                <td>...</td>
+                <td>...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <li>このようなstep-by-stepのsoftware-intensiveマッピングは、decode/dispach interpretationと概念的に似ている</li>
         <ul>
           <li>
@@ -533,14 +1105,11 @@
               </details>
             </div>
           </li>
-          <li>その概念の有用性はinterpretationにとどまらない</li>
           <li>binary translationでも有用だったりする</li>
+          <li>オーバーヘッドは大きくなるが</li>
           <ul>
-            <li>オーバーヘッドは大きくなるが</li>
             <li>しかしstep-by-stepにsoftware-intensiveに行わなくてはならない場合もある</li>
-            <ul>
-              <li>ex.) 64bitのguest programを32bitのhost programでemulate</li>
-            </ul>
+            <!-- <li>ex.) 64bitのguest programを32bitのhost programでemulate</li> -->
           </ul>
           <li><strong>全ての方法が上手くいかないとき、step-by-stepのsoftware-intensive手法は有用</strong></li>
         </ul>
@@ -556,7 +1125,7 @@
         </ul>
       </ul>
       <div class="flex">
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-16-07-11.png" alt="" height="200px">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/offset_mapping.svg" alt="" width="270px">
         <ul>
           <strong>offset mapping</strong>
           <li>host address spaceがオフセット分だけずれている</li>
@@ -564,7 +1133,7 @@
         </ul>
       </div>
       <div class="flex">
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-16-29-01.png" alt="" height="200px">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/direct_mapping.svg" alt="" width="270px">
         <ul>
           <strong>direct mapping</strong>
           <li>上図においてオフセットが0の場合</li>
@@ -577,8 +1146,9 @@
       <p><strong>(様々なtranslation方法を見てきたが、compatibilityとの相性を考えていく)</strong></p>
       <ul>
         <li>guestとhostのアドレス空間の相対的な大きさは、マッピング方法の選択に重要な意味を持つ</li>
-        <li>(どんな手法でも大事なことは、runtimeとguest上のアプリケーションが同じアドレス空間を共有すること)</li>
+        <li>どの手法でも大事なこと：</li>
         <ul>
+          <li>runtimeとguest上のアプリケーションが同じアドレス空間を共有すること</li>
           <li>"ちゃんとしないと"権限のない操作が行われてしまう</li>
         </ul>
       </ul>
@@ -593,37 +1163,71 @@
       <ul>
         <li>intrinsic compatibilityを満たしたい場合(& high performance)</li>
         <ul>
-          <div class="flex">
-            <div style="width: 350px; margin-right: 30px;">
-              <li>guestのメモリ最大使用量とruntime softwareが収まるだけの空間をhost上に確保すべき</li>
-              <ul>
-                <li>この場合direct mappingを使うのがよい</li>
-                <li>ex.) IA-32をIA-64上でemulateするVM</li>
-              </ul>
-              <li>必要量が確保できないときも、図3.8のようなsoftware translation methodを使えば実現可能</li>
-            </div>
-            <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-15-04-30.png" alt="" width="300px">
-          </div>
+          <li>guestのメモリ最大使用量とruntime softwareが収まるだけの空間をhost上に確保すべき</li>
+          <ul>
+            <!-- <li>この場合direct mappingを使うのがよい</li> -->
+            <li>
+              <svg x="0" y="0" width="400px" height="80px" style="background-color: #ddd;">
+                <rect x="10px" y="15px" width="100px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+                <rect x="110px" y="15px" width="150px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+                <rect x="260px" y="15px" width="50px" height="50px" fill="red" stroke="#000" stroke-width="1px" />
+                <text x="35" y="35px">runtime</text>
+                <text x="33" y="50px">software</text>
+                <text x="130" y="35px">guest's maximum</text>
+                <text x="118" y="50px">memory consumption</text>
+                <text x="275" y="43px">+α</text>
+              </svg>
+            </li>
+            <li>ex.) IA-32をIA-64上でemulateするVM</li>
+          </ul>
+          <li>必要量が確保できないときも、下図のようなsoftware translation methodを使えば実現可能</li>
+          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-15-04-30.png" alt="" width="300px">
         </ul>
         <li>一方で、hostのABIに許可されている最大値までguestがメモリを使用することはあまりない</li>
+        <svg x="0" y="0" width="400px" height="80px" style="background-color: #ddd;">
+          <rect x="10px" y="15px" width="100px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+          <rect x="110px" y="15px" width="150px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+          <rect x="111px" y="16px" width="100px" height="48px" fill="rgb(0, 150, 256)" />
+          <rect x="260px" y="15px" width="50px" height="50px" fill="red" stroke="#000" stroke-width="1px" />
+          <text x="35" y="35px">runtime</text>
+          <text x="33" y="50px">software</text>
+          <text x="130" y="35px">guest's maximum</text>
+          <text x="118" y="50px">memory consumption</text>
+          <text x="275" y="43px">+α</text>
+        </svg>
         <ul>
           <li>更に、特定のメモリサイズやメモリアドレスに依存するプログラムなどほぼない</li>
           <li>extrinsic compatibilityで十分</li>
           <ul>
-            <li>「全プログラムに対して必要なメモリが確保できます！」と保証されていなくても大丈夫</li>
+            <li>「全プログラムに対して必要なメモリが確保でき、正しく動きます！」と保証されていなくても大丈夫</li>
             <li>runtimeを配置して残った容量を、guestの使用量が越えなければよい</li>
-            <li>runtimeがguest processに対して"戦略的に"配置されていれば、効率的な変換が可能</li>
-            <ul>
-              <li>戦略的：guest processが使用していない領域に配置すること</li>
-              <li>≒ runtimeがposition independent</li>
-              <ul>
-                <li>guest中のアプリケーションが使用している場所と衝突しないメモリ領域に自身を配置することが可能</li>
-                <li>アプリケーションが効率的に動作するための邪魔をしない</li>
-              </ul>
-            </ul>
+            <svg x="0" y="0" width="400px" height="240px" style="background-color: #ddd;">
+              <rect x="10px" y="15px" width="330px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+              <text x="130" y="45px">host memory</text>
+
+              <rect x="10px" y="95px" width="100px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+              <rect x="110px" y="95px" width="150px" height="50px" fill="rgb(0, 150, 256)" stroke="#000" stroke-width="1px" />
+              <text x="35" y="115px">runtime</text>
+              <text x="33" y="130px">software</text>
+              <text x="135" y="125px">guest's memory</text>
+
+              <rect x="10px" y="175px" width="100px" height="50px" fill="#fff" stroke="#000" stroke-width="1px" />
+              <rect x="110px" y="175px" width="250px" height="50px" fill="red" stroke="#000" stroke-width="1px" />
+              <text x="35" y="195px">runtime</text>
+              <text x="33" y="210px">software</text>
+              <text x="135" y="205px">guest's memory</text>
+
+              <line x1="10" y1="65" x2="10" y2="95" stroke="black" stroke-dasharray="1" />
+              <line x1="10" y1="225" x2="10" y2="95" stroke="black" stroke-dasharray="1" />
+              <line x1="340" y1="65" x2="340" y2="225" stroke="black" stroke-dasharray="1" />
+            </svg>
           </ul>
         </ul>
-      </ul>
+        <li>runtimeがposition independentな場合：</li>
+        <ul>
+          <li>効率的な変換が可能</li>
+          <li>guest中のアプリケーションが使用している場所と衝突しないメモリ領域に自身を配置することが可能</li>
+        </ul>
     </div>
   </div>
 
@@ -649,10 +1253,11 @@
         <li>OSが割り当てる最小のメモリブロックのサイズと、保護権限を維持する粒度</li>
       </ul>
     </ul>
+    <p>まずは、「アドレス空間の構造全体」についての具体例</p>
     <div style="border: 1px dashed black; padding: 5px 20px;">
       ex.) Win32 ABI address space
       <div class="flex">
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-17-56-08.png" alt="" width="200px">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/windows32_abi_address_space.svg" alt="" width="200px">
         <div class="flex-right">
           <table border="1">
             <tr>
@@ -675,18 +1280,22 @@
         </div>
       </div>
     </div>
-    <p>
-      重要な点は、ユーザープロセスが非予約範囲内のすべてのアドレスへのアクセスを許可されること<br>
-      先に指摘したように、ランタイムはユーザープロセスとアドレス空間を透過的に共有しなければならない<br>
-      つまり、<strong>あるメモリに対してアクセスできる"者"を区別する必要がある</strong>
-    </p>
+    <ul>
+      <li>重要な点：</li>
+      <ul>
+        <li>ユーザープロセスが非予約範囲内のすべてのアドレスへのアクセスを許可されること</li>
+        <li><strong>あるメモリに対してアクセスできる"者"を区別する必要がある</strong></li>
+      </ul>
+    </ul>
 
     <div id="3.4.1 Memory Protection">
       <h3>3.4.1 Memory Protection</h3>
       <ul>
         <li>memory protectionはmemory architectureの重要な側面<br></li>
         <li>多くのISAでは異なる種類のアクセス制限を持っている</li>
-        <li>これらの制限はread, write, executeで表される(ことが多い)</li>
+        <ul>
+          <li>これらの制限はread, write, executeで表される(ことが多い)</li>
+        </ul>
       </ul>
       <ul>
         <li>software translation tableを使う場合</li>
@@ -723,7 +1332,7 @@
           他にも上のようなことを実現する方法はいろいろある<br>
           右図はmmap()を使った例
         </div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-22-10-54.png" alt="" width="600px" style="margin-bottom: 20px;">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/mapping_memory_protection.svg" alt="" width="600px" style="margin-bottom: 20px;">
       </div>
       <span style="color: darkgrey;">(こういった便利な機能がなかったら...translation tableのような対応関係の取れるtableを作ればよい(けど効率は悪い))</span>
 
@@ -739,9 +1348,12 @@
         <ul>
           <li>1つのhost page内に複数のguest pageが入る</li>
           <li>guest page毎に権限が違うと困る</li>
-          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-22-39-04.png" alt="" width="650px">
-          <li>tableを作って細かく管理すれば(software-based mapping法を使えば)解決できるが、オーバーヘッドが大きくなる</li>
-          <li>guest dataとguest codeの教会をhost page境界に持ってくれば？</li>
+          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/page_size_issues2.svg" alt="" width="400px">
+          <li>tableを作って細かく管理すれば(software-based mapping法を使えば)解決可能</li>
+          <ul>
+            <li>オーバーヘッドが大きくなる</li>
+          </ul>
+          <li>guest dataとguest codeの境界をhost page境界に持ってくれば？</li>
           <ul>
             <li>runtimeが位置の調節やアドレスの再変換をしなくてはならない</li>
             <li>emulationの効率が落ちる</li>
@@ -788,14 +1400,14 @@
         <ul>
           <li>オリジナルのソースコードが自分で読んだり書いたりした場合、翻訳されたバージョンでも全く同じ結果が得られなければならない</li>
         </ul>
-      </ul>
-
-      <h4>Basic Method</h4>
-      <ul>
         <li>self-referencing/self-modifyingどちらもやりたいことは同じ</li>
         <ul>
           <li><strong>guest program codeに対する正確なメモリイメージの維持</strong></li>
         </ul>
+      </ul>
+
+      <h4>Basic Method</h4>
+      <ul>
         <div class="flex">
           <div class=flex-left>
             <li>翻訳後でのloadとstoreの対象アドレスは、sourceのメモリ領域にマッピングされる</li>
@@ -815,12 +1427,16 @@
                 <ul>
                   <li>翻訳されたすべてのコードに対してもwriteは禁止</li>
                 </ul>
-                <li>書き込みを行おうとするとsignalが飛ぶ</li>
+                <li>Interpretation modeでソースコードを書き換えてから、translation</li>
                 <ol>
+                  <li>書き込みを行おうとするとsignalが飛ぶ</li>
                   <li>runtimeは全てのcode cacheか、変更されるページに対応する翻訳をflush</li>
                   <li>対象のコード領域を一時的に書き込み可能にする</li>
                   <li>interpretation modeで書き換えていく</li>
-                  <li>書き込み権限を戻す</li>
+                  <ul>
+                    <li>faultが起きた地点を通るまで</li>
+                  </ul>
+                  <li>書き込み権限を戻し、translation再開</li>
                 </ol>
               </ul>
             </div>
@@ -836,9 +1452,9 @@
       <ul>
         <li>上記のself-modifying codeへの対処方法はhigh-overhead</li>
         <li>(ただしself-modifying code自体が多くないのであまり問題ない)</li>
-        <li>self-modifying codeやpseudo-self-modifying codeを使う場合は深刻</li>
+        <li>self-modifying codeやpseudo-self-modifying codeを頻繁に使う場合は深刻</li>
       </ul>
-      <p>そこでpseudo-self-modifying codeの扱いを見ていく</p>
+      <p>そこでpseudo-self-modifying codeを効率的に扱う方法を見ていく</p>
       <div class="flex">
         <div class="flex-left">
           <ul>
@@ -880,12 +1496,43 @@
         <li>(真の)self-modifying codeへの他の対処方法</li>
         <ul>
           <li>self-modifying codeの"よくあるパターン"の認識によって除去する</li>
-          <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self_modifying_code_pattarn_recognition.svg" alt="" width="300px"></li>
+          <ul>
+            <li>ex.) 即値代入を行い、loopを実行</li>
+            <li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self_modifying_code_pattarn_recognition.svg" alt="" width="300px"></li>
+          </ul>
         </ul>
         <li>変更される箇所が少ない場合</li>
         <ul>
           <li>ex.) デバイスに依存しないドライバ</li>
           <li>様々なソースコードのバージョンと、その翻訳結果のコードをペアで保存</li>
+          <ul>
+            <svg x=0 y=0 width=440 height=130 style="background-color: #ddd">
+              <marker id="marker-start" viewBox="-10 -5 10 10" refX="-10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+                <path d="M -10 0 L 0 -5 L 0 5 Z"/>
+              </marker>
+              <marker id="marker-end" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+                <path d="M 0 -5 L 0 5 L 10 0 Z"/>
+              </marker>
+              
+              <polygon points="30 20, 230 20, 230 50, 30 50" stroke=black fill="#fff" />
+              <text x="40" y="40">not-modifyed-source-code</text>
+              <polygon points="30 50, 230 50, 230 80, 30 80" stroke=black fill="#fff" />
+              <text x="40" y="70">once-modifyed-source-code</text>
+              <polygon points="30 80, 230 80, 230 110, 30 110" stroke=black fill="#fff" />
+              <text x="40" y="100">twice-modifyed-source-code</text>
+              
+              <polygon points="280 20, 330 20, 330 50, 280 50" stroke=black fill="#fff" />
+              <text x="290" y="40">1111</text>
+              <polygon points="280 50, 330 50, 330 80, 280 80" stroke=black fill="#fff" />
+              <text x="290" y="70">2222</text>
+              <polygon points="280 80, 330 80, 330 110, 280 110" stroke=black fill="#fff" />
+              <text x="290" y="100">3333</text>
+
+              <line id="line1" x1="230" y1="35" x2="280" y2="35" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+              <line id="line2" x1="230" y1="65" x2="280" y2="65" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+              <line id="line3" x1="230" y1="95" x2="280" y2="95" stroke="black" marker-start="url(#marker-start)" marker-end="url(#marker-end)" stroke-width="1" />
+            </svg>
+          </ul>
           <li>オーバーヘッドは大きいが、再翻訳の繰り返しは避けられる</li>
         </ul>
       </ul>
@@ -906,25 +1553,99 @@
         <li>もっと速く行いたい</li>
         <ul>
           <li>ex.) Omniware VM</li>
-          <li>segment sizeを2の累乗に限定</li>
           <ul>
-            <li>最後の1bitがフリー</li>
-            <li>この1bitで書き込み権限を表す</li>
-            <li></li>
+            <li>guest dataとcodeを2の累乗のsegment sizeに限定</li>
+            <ul>
+              <li>最後の1bitがフリー</li>
+              <li>この1bitで書き込み権限を表す</li>
+              <li></li>
+            </ul>
+            <li>activeなsegmentが常に1つという仮定がある場合</li>
+            <ul>
+              <li>そのsegmentのアドレスをレジスタに保存</li>
+            </ul>
+            <li>その他諸々の技術を用いて、10%のオーバーヘッド削減</li>
+            <li>「segment sizeを2の累乗に限定」によって追加のアドレス空間の制限が発生する可能性がある</li>
+            <ul>
+              <li>intrinsic compatibilityが失われる可能性がある</li>
+            </ul>
           </ul>
-          <li>activeなsegmentが常に1つという仮定がある場合</li>
+          <li>ex.) Dynamo System</li>
+          <div class="flex">
+            <div class="flex-left">
+
+              <ul>
+                <li>runtime modeとemulation modeの2つを用意しておく</li>
+                <ul>
+                  <li>emulation mode</li>
+                  <ul>
+                    <li>翻訳されたcodeを実行する</li>
+                  </ul>
+                  <li>runtime mode</li>
+                  <ul>
+                    <li>そのほかの時間</li>
+                    <li>binary translatorがcodeを生成する、など</li>
+                  </ul>
+                </ul>
+                <li>
+                  <details>
+                    <summary>細かい話</summary>
+                    <ul>
+                      <li>modeの切り替えについて</li>
+                      <ul>
+                        <li>mprotect() を用いて権限変更</li>
+                        <li>runtime mode -> emulation mode</li>
+                        <ul>
+                          <li>切り替える直前に権限変更</li>
+                        </ul>
+                        <li>emulation mode -> runtime mode</li>
+                        <ul>
+                          <li>runtime modeに制御が戻ると権限変更</li>
+                        </ul>
+                        <li>emulation中のソフトウェアがruntime領域にジャンプしようとしたら？</li>
+                        <ul>
+                          <li>Interpretationの場合</li>
+                          <ul>
+                            <li>ジャンプ先を明示的にチェックできる(から大丈夫)</li>
+                          </ul>
+                          <li>Binar translationの場合</li>
+                          <ul>
+                            <li>翻訳されたコードブロック内へのジャンプ</li>
+                            <ul>
+                              <li>直接アドレスで指定されるため、runtimeにジャンプしないとわかる</li>
+                            </ul>
+                            <li>翻訳されたコードブロックから出るジャンプ</li>
+                            <ul>
+                              <li>これは、翻訳ブロック内のマップテーブルやリンクポインタのいずれかを介して行われる</li>
+                              <li>runtimeがこれらを書き込む。つまりruntimeが書き込んだ時に、とび先が大丈夫かチェック可能</li>
+                            </ul>
+                          </ul>
+                        </ul>
+                      </ul>
+                    </ul>
+                  </details>
+                </li>
+                <li>mode切り替えのオーバーヘッドが大きい</li>
+                <ul>
+                  <li>guest codeが変換されてcacheに保存されれば、大事ではない</li>
+                </ul>
+              </ul>
+            </div>
+            <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/protect_runtime_by_2mode.svg" alt="" class="right-flex" width="400px">
+          </div>
+        </ul>
+        <li>memoryにマッピングされたregisterも守りたい</li>
+        <ul>
+          <li>intrinsic compatibilityの観点で考える：</li>
           <ul>
-            <li>そのsegmentのアドレスをレジスタに保存</li>
+            <li>software protection checkingを用いる</li>
           </ul>
-          <li>その他諸々の技術を用いて、10%のオーバーヘッド削減</li>
-          <li>「segment sizeを2の累乗に限定」によって追加のアドレス空間の制限が発生する可能性がある</li>
+          <li>extrinsic compatibilityの観点で考える：</li>
           <ul>
-            <li>intrinsic compatibilityが失われる可能性がある</li>
+            <li>「不正な領域への書き込みはない」ようなプログラムにする</li>
           </ul>
         </ul>
       </ul>
-
-
     </div>
   </div>
 </body>
