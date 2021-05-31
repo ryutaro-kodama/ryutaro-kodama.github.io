@@ -1060,7 +1060,7 @@
         </li>
       </ul>
       <p>論理アドレスと物理アドレスの割り当てに似ている。。。</p>
-      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-15-04-30.png" alt="" width="650px">
+      <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/mapping_guest2host_virtual2real.svg" alt="" width="550px">
       <ul>
         <li>guest memory blockがhost memory内に存在しないこともある</li>
         <div class="flex">
@@ -1181,7 +1181,7 @@
             <li>ex.) IA-32をIA-64上でemulateするVM</li>
           </ul>
           <li>必要量が確保できないときも、下図のようなsoftware translation methodを使えば実現可能</li>
-          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-15-04-30.png" alt="" width="300px">
+          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/mapping_guest2host_virtual2real.svg" alt="" width="350px">
         </ul>
         <li>一方で、hostのABIに許可されている最大値までguestがメモリを使用することはあまりない</li>
         <svg x="0" y="0" width="400px" height="80px" style="background-color: #ddd;">
@@ -1553,23 +1553,25 @@
         <li>もっと速く行いたい</li>
         <ul>
           <li>ex.) Omniware VM</li>
-          <ul>
-            <li>guest dataとcodeを2の累乗のsegment sizeに限定</li>
+          <!-- <details>
+            <summary>ex.) Omniware VM</summary>
             <ul>
-              <li>最後の1bitがフリー</li>
-              <li>この1bitで書き込み権限を表す</li>
-              <li></li>
+              <li>guest dataとcodeを2の累乗のsegment sizeに限定</li>
+              <ul>
+                <li>最後の1bitがフリー</li>
+                <li>この1bitで書き込み権限を表す</li>
+              </ul>
+              <li>activeなsegmentが常に1つという仮定がある場合</li>
+              <ul>
+                <li>そのsegmentのアドレスをレジスタに保存</li>
+              </ul>
+              <li>その他諸々の技術を用いて、10%のオーバーヘッド削減</li>
+              <li>「segment sizeを2の累乗に限定」によって追加のアドレス空間の制限が発生する可能性がある</li>
+              <ul>
+                <li>intrinsic compatibilityが失われる可能性がある</li>
+              </ul>
             </ul>
-            <li>activeなsegmentが常に1つという仮定がある場合</li>
-            <ul>
-              <li>そのsegmentのアドレスをレジスタに保存</li>
-            </ul>
-            <li>その他諸々の技術を用いて、10%のオーバーヘッド削減</li>
-            <li>「segment sizeを2の累乗に限定」によって追加のアドレス空間の制限が発生する可能性がある</li>
-            <ul>
-              <li>intrinsic compatibilityが失われる可能性がある</li>
-            </ul>
-          </ul>
+          </details> -->
           <li>ex.) Dynamo System</li>
           <div class="flex">
             <div class="flex-left">
