@@ -1321,17 +1321,17 @@
       <ul>
         <li>ページとアクセス権限を指定するシステムコール</li>
         <ul>
-          <li>ex.) mprotect() system call</li>
+          <li>ex.) <code>mprotect()</code> system call</li>
         </ul>
         <li>アクセス権限に違反した場合にruntimeへ送られるシグナル</li>
         <ul>
-          <li>ex.) SIGSEGV signal</li>
+          <li>ex.) <code>SIGSEGV</code> signal</li>
         </ul>
       </ul>
       <div class="flex">
         <div class="flex-left">
           他にも上のようなことを実現する方法はいろいろある<br>
-          右図はmmap()を使った例
+          右図は<code>mmap()</code>を使った例
         </div>
         <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/mapping_memory_protection.svg" alt="" width="600px" style="margin-bottom: 20px;">
       </div>
@@ -1596,7 +1596,7 @@
                     <ul>
                       <li>modeの切り替えについて</li>
                       <ul>
-                        <li>mprotect() を用いて権限変更</li>
+                        <li><code>mprotect()</code>を用いて権限変更</li>
                         <li>runtime mode -> emulation mode</li>
                         <ul>
                           <li>切り替える直前に権限変更</li>
