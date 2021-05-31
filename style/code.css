@@ -13,6 +13,7 @@ code {
     -webkit-border-radius: 5px; 
     border: 1px solid #BCBEC0;
     padding: 2px;
+    background: #F1F3F5;
     font:12px Monaco,Consolas,"Andale  Mono","DejaVu Sans Mono",monospace
 }
 
