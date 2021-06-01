@@ -1103,6 +1103,7 @@
             <div style="border: 1px dashed black;">
               <details>
                 <summary style="color: red;"><strong>Q. どんなところが似ている？</strong></summary>
+                softwareがtableを用いて、よしなに操作してくれる
               </details>
             </div>
           </li>
@@ -1156,9 +1157,45 @@
       <div style="border: 1px dashed black;">
         <details>
           <summary style="color: red;"><strong>Q. intrinsic compatibilityとは</strong></summary>
+          全てのguest softwareの全ての可能な入力"data"に対して動作可能
         </details>
         <details>
           <summary style="color: red;"><strong>Q. extrinsic compatibilityとは</strong></summary>
+          VM上で動作できないプログラムがある
+          <table border="1" >
+            <thead>
+              <tr>
+                <th width="80px">-----</th>
+                <th width="300px">intrinsic compatibility</th>
+                <th width="300px">extrinsic compatibility</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>特徴</td>
+                <td>
+                  <ul>
+                    <li>全てのguest softwareの全ての可能な入力"data"に対して動作可能</li>
+                    <li>ex.)マイクロプロセッサのISA互換性のためにハードウェア設計者が使用する標準規格</li>
+                  </ul>
+                </td>
+                <td>
+                  <ul>
+                    <li>VM上で動作できないプログラムがある</li>
+                    <ul>
+                      <li>ex.) 特定のコンパイラでコンパイルされたプログラム</li>
+                      <li>ex.) 特定のライブラリを使うプログラム</li>
+                    </ul>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td>動作の保証</td>
+                <td>追加の保証なしに、native platform上と同じように動くことが確約</td>
+                <td>検証技術を用いて、誰かが保証してくれさえすれば動く</td>
+              </tr>
+            </tbody>
+          </table>
         </details>
       </div>
       <ul>
