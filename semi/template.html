@@ -6,15 +6,34 @@
 	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
-	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/code.css" />
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
-	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.js" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
 </head>
 
 <body>
   <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
   <h1></h1>
   <h2></h2>
+
+	<p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
+	<pre>
+		<code class="language-py">
+			import Prism from prismjs;
+			
+			x = 10
+			print(x)
+		</code>
+	</pre>
+	<pre data-line="3">
+		<code class="language-css line-numbers">
+			p {
+				color: red;
+			}
+		</code>
+	</pre>
+
+	<p>inline code</p>
+	<code class="language-c">print()</code>
 </body>
 
 </html>
