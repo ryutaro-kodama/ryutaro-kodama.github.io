@@ -6,7 +6,8 @@
 	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
-	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/code.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
   <style>
     .right-separate {
       border-right: 3px double black;
@@ -1359,17 +1360,17 @@
       <ul>
         <li>ページとアクセス権限を指定するシステムコール</li>
         <ul>
-          <li>ex.) <code>mprotect()</code> system call</li>
+          <li>ex.) <code class="language-c">mprotect()</code> system call</li>
         </ul>
         <li>アクセス権限に違反した場合にruntimeへ送られるシグナル</li>
         <ul>
-          <li>ex.) <code>SIGSEGV</code> signal</li>
+          <li>ex.) <code class="language-c">SIGSEGV</code> signal</li>
         </ul>
       </ul>
       <div class="flex">
         <div class="flex-left">
           他にも上のようなことを実現する方法はいろいろある<br>
-          右図は<code>mmap()</code>を使った例
+          右図は<code class="language-c">mmap()</code>を使った例
         </div>
         <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/mapping_memory_protection.svg" alt="" width="600px" style="margin-bottom: 20px;">
       </div>
@@ -1455,7 +1456,7 @@
               <li>self-referencingは自動的に正しく実装できる</li>
             </ul>
           </div>
-          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-27-23-51-07.png" alt="" class="flex-right" width="300px">
+          <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self-reference.svg" alt="" class="flex-right" width="400px">
         </div>
         <div class="flex">
           <div class="flex-left" style="width: 850px">
@@ -1481,7 +1482,7 @@
             </div>
           </div>
           <div class="flex-right" style="flex-direction: column;">
-            <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-28-01-05-01.png" alt="" width="300px">
+            <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self_modifying.svg" alt="" width="400px">
             <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/self_modifying_code_basic_method.svg" alt="" width="400px">
           </div>
         </div>
@@ -1496,25 +1497,26 @@
       <p>そこでpseudo-self-modifying codeを効率的に扱う方法を見ていく</p>
       <div class="flex">
         <div class="flex-left">
-          <ul>
-            <li>pseudo-self-modifying code：</li>
+          <div class="sticky">
             <ul>
-              <li>データ領域とコードが混在している状態</li>
-              <li>コードを変更するつもりがない書き込みでも、書き込み禁止のエラーが発生してしまう</li>
-              <li>device driverやgame kernel等に用いられる</li>
+              <li>pseudo-self-modifying code：</li>
+              <ul>
+                <li>データ領域とコードが混在している状態</li>
+                <li>コードを変更するつもりがない書き込みでも、書き込み禁止のエラーが発生してしまう</li>
+                <li>device driverやgame kernel等に用いられる</li>
+              </ul>
+              <li>翻訳済みコードが実行される前に、ソースのコードが修正されたかどうかを動的にチェックする</li>
+              <ol>
+                <li>同じコード領域への書き込み保護フォールトが繰り返し発生した場合</li>
+                <li>runtimeは書き込まれているページのコードを再翻訳し、元のソースコードをサイドテーブルに保存</li>
+                <li>コードの現在のバージョンとサイド・テーブルのオリジナル・バージョンを比較</li>
+                <li>コードを変更していないと判断すれば（pseudo-self-modifying codeの場合）、翻訳されたコードを実行可能</li>
+              </ol>
+              <li>コードの比較に時間がかかるが、先の方法よりは高速</li>
             </ul>
-            <li>翻訳済みコードが実行される前に、ソースのコードが修正されたかどうかを動的にチェックする</li>
-            <ol>
-              <li>同じコード領域への書き込み保護フォールトが繰り返し発生した場合</li>
-              <li>runtimeは書き込まれているページのコードを再翻訳し、元のソースコードをサイドテーブルに保存</li>
-              <li>コードの現在のバージョンとサイド・テーブルのオリジナル・バージョンを比較</li>
-              <li>書き込みたい場所の書き込み禁止をオフにしておく</li>
-              <li>コードを変更していないと判断すれば（pseudo-self-modifying codeの場合）、翻訳されたコードを実行可能</li>
-            </ol>
-            <li>コードの比較に時間がかかるが、先の方法よりは高速</li>
-          </ul>
+          </div>
         </div>
-        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/2021-05-28-02-15-21.png" alt="" class="flex-right" width="500px">
+        <img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/VirtualMachine_ch3/pseudo-self-modifying-code.svg" alt="" class="flex-right" width="500px">
       </div>
 
       <h4>Fine-Grain Write-Protection</h4>
@@ -1634,7 +1636,7 @@
                     <ul>
                       <li>modeの切り替えについて</li>
                       <ul>
-                        <li><code>mprotect()</code>を用いて権限変更</li>
+                        <li><code class="language-c">mprotect()</code>を用いて権限変更</li>
                         <li>runtime mode -> emulation mode</li>
                         <ul>
                           <li>切り替える直前に権限変更</li>
