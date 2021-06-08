@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2021-06-08</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(6/08)</h1>
+
+	<h2>復習</h2>
+	<div id="review">
+		<h3>何をやりたいか</h3>
+		<img src="https://ryutaro-kodama.github.io/slides/semi/progress/2021-06-08/what_I_want_to_do.svg" width="900px">
+
+		<h3>どうやってやりたいか</h3>
+		<img src="https://ryutaro-kodama.github.io/slides/semi/progress/2021-05-25/2021-05-25-suggest-overview.png" width="900px">
+	</div>
+
+	<h2>今週の進捗</h2>
+  <div id="progress">
+    <ul>
+      <li>Ariadneのコードを読んだ</li>
+			<li>forwardとbackwardのinterfaceを考える</li>
+    </ul>
+  </div>
+
+  <h2>Ariadneのコードを読んだ</h2>
+	<div id="progress1">
+		<h3>困っていたこと</h3>
+		<div class="flex">
+			<div class="flex-left">
+				<p>AriadneのCFG解析結果</p>
+				<img src="https://ryutaro-kodama.github.io/slides/semi/progress/2021-05-11/2021-05-11-kodama2.png" width="300px">
+			</div>
+			<div class="flex-right">
+				<p>WALAのCFG解析結果</p>
+				<img src="https://ryutaro-kodama.github.io/slides/semi/progress/2021-05-11/2021-05-11-kodama3.png" width="500px">
+			</div>
+		</div>
+		<p>他にも問題...</p>
+		<ul>
+			<li>WALA IR上の表現と実際のコードの対応関係が分からない</li>
+		</ul>
+
+		<h3>一通りコードを追ってみた</h3>
+		<img src="https://ryutaro-kodama.github.io/slides/semi/progress/2021-06-08/ariadne-CFG.png" width="500px">
+		<p>データの収納場所も分かった</p>
+		<p>TAJSの実装始めます</p>
+		<ul>
+			<li>まずはvalue-flow graph作成から</li>
+		</ul>
+	</div>
+
+	<h2>forwardとbackwardのinterfaceを考える</h2>
+	<div id="progress2">
+		<h3>forwardからbackwardへどんな情報(制約)を渡すか</h3>
+		<p>そもそもbackward解析では<strong>制約がたくさん欲しい</strong></p>
+		<ul>
+			<li>矛盾が起きやすくなるため</li>
+			<li>その制約を多くforwardから渡せたら、scalabilityが向上するでは？</li>
+		</ul>
+
+		<p>渡そうと思っている情報(暫定)</p>
+		<ul>
+			<li>変数と型の対応関係</li>
+			<ul>
+				<li>ex.) x:int, str</li>
+			</ul>
+			<li>型と型の対応関係</li>
+			<ul>
+				<li>ex.) 型Aは型Bのサブタイプ</li>
+				<li>継承関係を表すとか(?)</li>
+			</ul>
+		</ul>
+
+		<h3>これを踏まえて</h3>
+		<ul>
+			<li>もう少し改良したい</li>
+			<ul>
+				<li>ここが提案手法の大きな工夫ポイント</li>
+			</ul>
+			<li>例題を考える</li>
+		</ul>
+	</div>
+
+	<h2>今後の予定</h2>
+	<ul>
+		<li><s>☑TAJS完読(~5/17)</s></li>
+		<li><s>☑Ariadne理解 <s>(~5/17)</s> (~5/31)</s></li>
+		<li>Interprocedural Analysis with Lazy Propagation(SAS '10) <s>(~6/5)</s> (~6/13)</li>
+		<li>TAJS実装 <s>(~5月いっぱい)</s> (~6/15)</li>
+		<li>解析アルゴリズムの例題を考える</li>
+	</ul>
+
+</body>
+
+</html>
