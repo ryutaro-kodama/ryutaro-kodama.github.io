@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="616px"
+  height="134px" viewBox="-0.5 -0.5 616 134"
+  content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2021-06-27T14:46:53.242Z&quot; agent=&quot;5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36&quot; etag=&quot;a5Vo7K-859g0PynKCE6q&quot; version=&quot;14.8.1&quot;&gt;&lt;diagram id=&quot;zeZKRvGi1VqFJkYama4f&quot; name=&quot;Page-1&quot;&gt;5VhNc5swEP01HJ0BZAM5xk7c5JBJpjm0OWpABs0IRIUc4/76SpH4EraJE1yn6cnsarWS9j2WJ1tgkZbfGMyTexohYrl2VFrg2nJdxwaB+JGerfJMg0vliBmOdFDjeMK/UTVTe9c4QkUnkFNKOM67zpBmGQp5xwcZo5tu2IqS7qo5jFHP8RRC0vf+wBFPtNfxLpuBW4TjRC8duL4aSGEVrE9SJDCim5YL3FhgwSjl6iktF4jI4lV1UfOWe0brjTGU8bdMeMCT2eL24c6+XzzfrqL0+3yxnICZSvMCyVqf+FFvl2+rGjC6ziIk09gWmG8SzNFTDkM5uhGoC1/CUyIsRzyuaMY1jI4nbJ0fMY7KvTt36noIIiGaIs62IkRPALYuoeaQp81NA4ivXUkLiqn2QU2BuE7cVEk86EIdUzSvV7RezVAWXUn6CSujGTpcI1EHtv2pB1+NZ1nsi1llXpe6+MraaqvgkPFqmZDAosBh5V5iQuqMkbbsGhAU9XhvwCFeNMhixAfZ08etBcxsBzCVjyECOX7p7mMXWnqFR4rFDhtaTLu0cEzAC7pmIdKz2m+GkWhqJrKNRKoQvUSi8nDbCstlQHFgw4GxDrAP7gtc7t5Xw121g4bJNQYfILd/FLkb1g32gGHKnYtJdY8enUlmoqOZ1GlUI8A7dYbhFV+qXD6uCCo1zvNjIA/+Acin5rvovBPymTeQaA/kowHa/4JbrkdEtea5eIj5KxjKIUGSIkh9u4X311qqj/kdx2ljSbUGOZzI6EnBwk5owrlUXlfyHO5ShhQXMaUxQTDHxUVIRaJlWIiQ5QqmmMiq9NI3XKucaq1X/ojUtiBK2Z6hjkGqc+iVzeMJd+vIZs8iRGhGNCxgYJErIbnCpRQ9e6j9IUXjzbqkAX1FA3ZwH5xK0XjByIrmpMrkbILD0KHBO1vGoHAZSW+4Zo+zD+sN19Qb4C/ojeoi9alvIJ5RyXPfQKrF/vsbiGLPuRqCP5ZuDMxEJ7qB+KZYGbiB+P7BDnKajuC/QaJ+tRuIZ5+KSZ/uBuK7I/euL6k1zC/Oe7XGYIsaqbN4ZmcZ0Bqe2Vk+pjWE2fyTqsKb/6PBzR8=&lt;/diagram&gt;&lt;/mxfile&gt;"
+  style="background-color: rgb(255, 255, 255);">
+  <defs>
+    <style type="text/css">
+      @import url(https://fonts.googleapis.com/css?family=https%3A%2F%2Ffonts.google.com%2Fspecimen%2FItim);
+      &#xa;
+      @import url(https://fonts.googleapis.com/css?family=Itim);
+      &#xa;
+    </style>
+  </defs>
+  <g>
+    <rect x="87" y="45" width="70" height="40" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 68px; height: 1px; padding-top: 65px; margin-left: 88px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 16px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                P</div>
+            </div>
+          </div>
+        </foreignObject><text x="122" y="70" fill="#000000" font-family="Helvetica" font-size="16px"
+          text-anchor="middle">P</text>
+      </switch>
+    </g>
+    <path d="M 133.18 123.46 L 157.3 117.43 Q 167 115 170.16 105.51 L 173.84 94.49 Q 177 85 169.93 77.93 L 157 65"
+      fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 128.08 124.73 L 134.03 119.64 L 133.18 123.46 L 135.72 126.43 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 7 125 L 220.63 125" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 225.88 125 L 218.88 128.5 L 220.63 125 L 218.88 121.5 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 267.5 100 L 267.5 90 L 327.5 90 L 327.5 79.5 L 346.5 95 L 327.5 110.5 L 327.5 100 Z" fill="none"
+      stroke="#000000" stroke-linejoin="round" stroke-miterlimit="10" pointer-events="all" />
+    <ellipse cx="452" cy="30" rx="15" ry="15" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 28px; height: 1px; padding-top: 30px; margin-left: 438px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 18px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                <p>
+                  <font face="Itim" data-font-src="https://fonts.googleapis.com/css?family=Itim"
+                    style="font-size: 20px">l</font>
+                </p>
+              </div>
+            </div>
+          </div>
+        </foreignObject><text x="452" y="35" fill="#000000" font-family="Helvetica" font-size="18px"
+          text-anchor="middle">l</text>
+      </switch>
+    </g>
+    <path d="M 82.5 69.5 L 74.07 77.93 Q 67 85 70.16 94.49 L 73.84 105.51 Q 77 115 86.81 116.96 L 127 125" fill="none"
+      stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 86.21 65.79 L 83.73 73.22 L 82.5 69.5 L 78.78 68.27 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <rect x="467" y="45" width="70" height="40" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 68px; height: 1px; padding-top: 65px; margin-left: 468px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 16px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                P</div>
+            </div>
+          </div>
+        </foreignObject><text x="502" y="70" fill="#000000" font-family="Helvetica" font-size="16px"
+          text-anchor="middle">P</text>
+      </switch>
+    </g>
+    <path d="M 513.18 123.46 L 537.3 117.43 Q 547 115 550.16 105.51 L 553.84 94.49 Q 557 85 549.93 77.93 L 537 65"
+      fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 508.08 124.73 L 514.03 119.64 L 513.18 123.46 L 515.72 126.43 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 387 125 L 600.63 125" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 605.88 125 L 598.88 128.5 L 600.63 125 L 598.88 121.5 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 462.5 69.5 L 454.07 77.93 Q 447 85 450.16 94.49 L 453.84 105.51 Q 457 115 466.81 116.96 L 507 125"
+      fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 466.21 65.79 L 463.73 73.22 L 462.5 69.5 L 458.78 68.27 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+  </g>
+  <switch>
+    <g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" /><a transform="translate(0,-5)"
+      xlink:href="https://www.diagrams.net/doc/faq/svg-export-text-problems" target="_blank"><text text-anchor="middle"
+        font-size="10px" x="50%" y="100%">Viewer does not support full SVG 1.1</text></a>
+  </switch>
+</svg>
