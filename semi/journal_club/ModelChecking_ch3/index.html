@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>ch3 Modeling Systems</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+  <h1>Modeling Systems</h1>
+
+	<div id="Introduction">
+		<h2>Introduction</h2>
+		<ul>
+			<li>システムの正しさの証明に必要な最初のステップ: 要求工学(requirements engineering)</li>
+			<ul>
+				<li>システムが持つべき特徴を指定(specification)</li>
+				<li>その特徴の真偽を評価する抽象化のレベルを考える</li>
+			</ul>
+			<li>specificationとmodelどっちも大事</li>
+			<ul>
+				<li>ex.)concurrent programでのdead lock判定</li>
+				<ul>
+					<li>「dead lockがない」ということを表す正確な仕様が必要なだけではない</li>
+					<li>concurrent program(atomic operationやscheduling policies)を適切に表現するやり方も必要</li>
+				</ul>
+			</ul>
+			<ul>
+				<li>本章ではformal modelを扱う</li>
+				<ul>
+					<li>次章ではtemporal logicによるformal specificationsを導入する</li>
+					<li>requirements engineeringでは、informal -> formalな形で定義していくことが多い</li>
+				</ul>
+			</ul>
+			<li>modelの構築</li>
+			<ul>
+				<li>検証の自動化のため、"特徴"に影響を与える部分を捉える</li>
+				<li>(逆に、無関係な部分は削る)</li>
+				<ul>
+					<li>ここで大事な着眼点が抽象化</li>
+				</ul>
+				<li>ex.)synchronous digital circuitsのmodel化</li>
+				<ul>
+					<li>実際のボルト数を考えたりはしない</li>
+					<li>gateとかBooleanという用語で置き換えて抽象的に考える</li>
+				</ul>
+				<li>ex.)communication protocolのmodel化</li>
+				<ul>
+					<li>"メッセージの交換"という部分に焦点を当てる</li>
+					<li>メッセージの内容、OSやデバイスの実装については無視する</li>
+				</ul>
+			</ul>
+			<li>多くのdigital circuitsやシステムはreactive system</li>
+			<ul>
+				<li>外環境と頻繁にinteractionする</li>	
+				<li>input-outputに応じたモデルを構築するのは困難</li>
+				<li>内部状態を元にしたモデルを構築する</li>
+				<ul>
+					<li>「どのような状態遷移(state transition)が起きるのか」を解析するのが大事</li>
+					<!-- <li>各state transitionを連ねると、pathになる</li> -->
+					<li>state transitionを表すグラフとして、Kripke structureを使う</li>
+				</ul>
+			</ul>
+			<!-- <ul>
+				<li>\(M=(S, R, L(,I) )\)</li>
+				<ul>
+					<li>\(S\):state</li>
+					<li>\(R\):relation(state transition)</li>
+					<li>\(L\):label(stateが持つ特徴を返す関数)</li>
+					<li>\(I\):initial state</li>
+				</ul>
+			</ul> -->
+			<li>世の中には数多くの"言語"、数多くの"システム"が存在する</li>
+			<ul>
+				<li>これらを統一的に扱ってmodel化したい</li>
+				<li>一階述語論理をprogramとmodelの間の架け橋として使う</li>
+			</ul>
+			<p>この後の内容:</p>
+			<ul>
+				<li>Kripke structureの形式的定義()</li>
+				<li>一階述語論理からKripke structureに変換する方法</li>
+				<li>programを一階述語論理に変換する方法</li>
+				<li>(プログラムをKripke structureでmodel化することが可能になる)</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="3.1 Transition System and Kripke structures">
+		<h2>3.1 Transition System and Kripke structures</h2>
+
+		<h4>transition system</h4>
+		<ul>
+			<li>transition system \(T=(S, S_0, R)\)</li>
+			<ul>
+				<li>\(S\): 状態の集合</li>
+				<ul>
+					<li>(この章も含め、基本的に)有限集合</li>
+				</ul>
+				<li>\(S_0 (\subseteq S)\): 初期状態</li>
+				<li>\(R (\subseteq S \times S)\): 状態間の関係(状態遷移)</li>
+				<ul>
+					<li>\(R(s,s') \Rightarrow\)全てのsに対して、s'が存在(left toral)</li>
+				</ul>
+			</ul>
+		</ul>
+
+		<h4>path</h4>
+		<ul>
+			<li>path = finite path \(\lor\) infinite path</li>
+			<li>(\(s\)の)finite path = sequence \(s_0, s_1, ..., s_n\)</li>
+			<ul>
+				<li>\(s_0 = s\)</li>
+				<li>\(R(s_i, s_{i+1})\) for all \(0 \leq i < n\)</li>
+			</ul>
+			<li>(\(s\)の)infinite path = sequence \(s_0, s_1, ...\)</li>
+			<ul>
+				<li>\(s_0 = s\)</li>
+				<li>\(R(s_i, s_{i+1})\) for all \(0 \leq i\)</li>
+			</ul>
+			<li>pathの性質</li>
+			<ul>
+				<li>finite pathはinfinite pathに拡張可能</li>
+				<li>finite pathはinfinite pathのprefixと見ることも可能</li>
+			</ul>
+		</ul>
+
+		<h4>state labels</h4>
+		<ul>
+			<li>状態を細かく観察する役割</li>
+			<li>別名atomic propositions</li>
+			<li>全てのatomic propositionの集合を\(\mathit{AP}\)と書く</li>
+			<li>
+				<div class="flex">
+					<table border="1" class="flex-left">
+						<thead>
+							<tr>
+								<th>state</th>
+								<th>state labels</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>1</td>
+								<td>a</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td>a, b</td>
+							</tr>
+						</tbody>
+					</table>
+					<table border="1" class="flex-right">
+						<thead>
+							<tr>
+								<th>label</th>
+								<th>atomic proposition</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>a</td>
+								<td>変数aが0に等しい</td>
+							</tr>
+							<tr>
+								<td>b</td>
+								<td>変数bが1に等しい</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</li>
+		</ul>
+
+		<h4>Kripke structure</h4>
+		<ul>
+			<li>Kripke structure \(M = (S, S_0, R, \mathit{AP}, L)\) (= transition system + state labels)</li>
+			<ul>
+				<li>\(S, S_0, R\)はtransition systemと同じ</li>
+				<li>\(\mathit{AP}\): atomic propositionの集合</li>
+				<li>\(L\): 各状態を、その状態でtrueなatomic propositionに結びつける関数 (\(L \rightarrow 2^{\mathit{AP}}\))</li>
+			</ul>
+			<li>\(S_0\)は考慮しないこともあり</li>
+			<li>ex.)</li>
+			<ul>
+				<li>\(S=\{s_1, s_2, s_3\}\)</li>
+				<li>\(S_0=\{s_1\}\)</li>
+				<li>\(R=\{(s_1, s_2), (s_2, s_3), (s_3, s_2)\}\)</li>
+				<li>\(AP=\{p,q\}\)</li>
+				<li>\(L=\{s_1 \mapsto \{p\}, s_2 \mapsto \emptyset, s_3 \mapsto \{p,q\}\}\)</li>
+				<li><img src="kripke_structure.svg" alt=""></li>
+				<details>
+					<summary style="color: red; font-weight: bold;">Q. 状態遷移の矢印を加えて</summary>
+					<img src="kripke_structure2.svg" alt="">
+				</details>
+				<details>
+					<summary style="color: red; font-weight: bold;">Q. labelを加えて</summary>
+					<img src="kripke_structure3.svg" alt="">
+				</details>
+			</ul>
+			<li>※文脈によってkripke structureが表すmodelが異なる</li>
+			<ul>
+				<li>model checkingの文脈: kripke structure = 解析対象のシステムのmodel</li>
+				<li>論理学の文脈: kripke structure = 仕様のmodel</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="3.2 Nondeterminism and Inputs">
+		<h2>3.2 Nondeterminism and Inputs</h2>
+
+		<h4>nondeterminism</h4>
+		<ul>
+			<li>ある状態に対し、2つ以上の遷移可能な次状態が存在すること</li>
+			<li>初期状態が複数あることも含まれる</li>
+			<li>(外界からの入力など、)システムの振る舞いがどうなるか分からない場面に存在する</li>
+			<li>ex.)電気のスイッチのmodel化</li>
+			<ul>
+				<li>0: 電気が消えている</li>
+				<li>1: 電気がついている</li>
+				<li>p: ボタンが押されている</li>	
+				<li>r: ボタンが押されていない</li>
+				<li>始めは電気がついていない</li>
+				<li><img src="light_switch.svg" alt=""></li>
+			</ul>
+			<li>人間の行動をmodel化できないので、以下の部分にnondeterminismを使用する</li>
+			<ul>
+				<li>初期状態: ボタンを押しているか・押していないかは分からない</li>
+				<li>状態遷移: ボタンをそのままにするか・しないかはわからない</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="3.3 First-Order Logic and Symbolic Representations">
+		<h2>3.3 First-Order Logic and Symbolic Representations</h2>
+
+		<p>プログラミング言語やHDLで書かれた特定のsemanticsを抜き出すため、一階述語論理を用いる</p>
+		<ul>
+			<li>注意点</li>
+			<ul>
+				<li>この章で用いる論理体系や意味論はinformalなもの</li>
+				<ul>
+					<li>一階述語論理や公理系を厳格に用いるのではない</li>
+				</ul>
+				<li>変数間の制約を表すために、一階述語論理を用いる</li>
+				<!-- <ul>
+					<li>プログラム変数は、制約式の中で一階の変数として登場する</li>
+					<li>変数が解釈される数学的構造はプログラム変数のデータ型に対応</li>
+				</ul>
+				<li>
+					例えば、整数型のプログラム変数は、自然数ℕとそれに付随する演算、あるいは32ビットのビットベクトルで解釈されます。最初のケースでは、無限の状態空間を持つクリプケ構造が得られ、2番目のケースでは、状態空間は大きくても有限になります。無限状態モデルはアルゴリズムの本に載っているような理想的な数学的見解に対応し、一方、有限状態モデルは現実のCプログラムを正確に表すことができます。2つの解釈のうち、どちらか一方ではプログラムが正しく、両方では正しくないというケースを作るのは簡単です。
+					技術的には、プログラム変数のデータ型と値域に対応する固定の一次構造上で解釈される多項式の一次式から、自然な方法で数式を導き出します。本章では、整数や真偽値などの単純な変数型に限定して説明します。必要に応じて、プログラムセマンティクスのより多くの概念を紹介します。
+				</li> -->
+			</ul>
+		</ul>
+
+		<h4>first-order logicで状態を表現してみよう</h4>
+		<ul>
+			<li>state \(s: V \rightarrow \cup_{v \in V} D_v\)</li>
+			<ul>
+				<li>\(V = \{v_1, ..., v_n\}\) (system variablesの集合)</li>
+				<li>\(D_v\): 各変数毎のdomain(型)</li>
+				<li>valuation: 変数を\(D_v\)内の値に結びつける関数</li>
+			</ul>
+			<li>ex.) \(V = \{v_1, v_2, v_3\}, D_{v_i} = \mathbb{N},\)valuation: \(\langle v_1 \mapsto 2, v_2 \mapsto 3, v_3 \mapsto 5 \rangle\)</li>
+			<ul>
+				<li>valuationを式で表す:</li>
+				<ul><li>\((v_1 = 2) \land (v_2 = 3) \land (v_3 = 5)\)</li></ul>
+			</ul>
+			<li>"状態の式表現"を使えば、状態集合(のsubset)も式(first-order formula)で表すことができる</li>
+			<ul>
+				<li>
+					\( \{ \langle v_1 \mapsto 2, v_2 \mapsto 3, v_3 \mapsto 1 \rangle,\) <br>
+					\( \quad	\langle v_1 \mapsto 2, v_2 \mapsto 3, v_3 \mapsto 2 \rangle,\) <br>
+					\( \quad	\langle v_1 \mapsto 2, v_2 \mapsto 3, v_3 \mapsto 3 \rangle\} \)
+				</li>
+				<li>
+					\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 1)) \; \lor \) <br>
+					\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 2)) \; \lor \) <br>
+					\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 3)) \; \lor \) <br>
+				</li>
+				<li>state \(s\)がfirst-order formula \(\phi\)で表される: \(s \vDash \phi\)</li>
+			</ul>
+		</ul>
+
+		<h4>first-order formulaを使うメリット1: 式の単純化が可能</h4>
+		<ul>
+			<li>
+				\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 1)) \; \lor \) <br>
+				\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 2)) \; \lor \quad \Leftrightarrow \quad (v_1 = 2) \land (v_2 = 3) \land (v_3 \geq 1) \land (v_3 \leq 3) \) <br>
+				\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 3)) \; \lor \) <br>
+			</li>
+		</ul>
+		
+		<h4>first-order formulaを使うメリット2: (通常の)集合演算を適用可能</h4>
+		<ul>
+			<li>\(A, B\): 状態集合\(S\)のsubset</li>
+			<li>\(\mathcal{A}(s), \mathcal{B}(s)\): 対応するfirst-order formula</li>
+			<li>
+				<table border="1">
+					<thead>
+						<tr>
+							<th>set expr</th>
+							<th>formula expr</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>\(A \cup B\)</td>
+							<td>\(\mathcal{A}(s) \lor \mathcal{B}(s) \)</td>
+						</tr>
+						<tr>
+							<td>\(A \cap B\)</td>
+							<td>\(\mathcal{A}(s) \land \mathcal{B}(s) \)</td>
+						</tr>
+						<tr>
+							<td>\(S \setminus A\)</td>
+							<td>\(\neg \mathcal{A}(s) \)</td>
+						</tr>
+						<tr>
+							<td>\(A \subseteq B\)</td>
+							<td>\(\mathcal{A}(s) \Rightarrow \mathcal{B}(s) \)</td>
+						</tr>
+					</tbody>
+				</table>
+			</li>
+		</ul>
+
+		<h4>first-order logicでtransition relationを表現してみよう</h4>
+		<ul>
+			<li>状態遷移前後どちらかのみで必要な変数があるかもしれないので、状態遷移前後でのsystem variablesの集合を分ける</li>
+			<ul>
+				<li>\(V\): present state variables</li>
+				<li>\(V'\): next state variables</li>
+				<li>変数\(v (\in V \cup V')\)のvariationの変化が、transitionに対応する</li>
+			</ul>
+			<li>transition relation \(R \subseteq S \times S\)に対し:</li>
+			<ul>
+				<li>\(\mathcal{R}(V,V')\)がtransitionを表す</li>
+			</ul>
+			<ul>
+				<li>
+					ex.) \(V = \{v_1, v_2, v_3\}\)のもとで<br>
+					\( \qquad\qquad \mathcal{R}(V,V') = (v_1' = v_1) \land (v_2' = v_2 + 1)\)<br>
+					は、
+					<ul>
+						<li>\(v_1\): <span style="color: red;">一定・増えた・減った・関係ない</span></li>
+						<li>\(v_2\): <span style="color: red;">一定・増えた・減った・関係ない</span></li>
+						<li>\(v_3\): <span style="color: red;">一定・増えた・減った・関係ない</span></li>
+						<li>
+							<details>
+								<summary></summary>
+								\(v_1\): <span style="color: red;">一定</span><br>
+								\(v_2\): <span style="color: red;">(1)増えた</span><br>
+								\(v_3\): <span style="color: red;">関係ない</span>
+							</details>
+						</li>
+					</ul>
+				</li>
+				<li>transition (pair) \((s,s')\)がfirst-order formula \(\phi\)で表される: \(s, s' \vDash \phi\)</li>
+			</ul>
+		</ul>
+
+		<h4>first-order logicでatomic propositionを表現してみよう</h4>
+		<ul>
+			<li>あるpropertyがtrueであるかfalseであるかは、state(=valuation)に依る</li>
+			<ul>
+				<li>(変数と値の関係で表せそう...)</li>
+			</ul>
+			<li>特にlabel \(l \in \mathit{AP} \)は次のように書くことができる:</li>
+			<ul>
+				<li>\(v = d \quad\) where \(v \in V, d \in D_v\)</li>
+				<ul>
+					<li>\(s(v)=d\)であれば、state \(s\)で命題\((v = d)\)がtrue</li>
+					<ul>
+						<li>state \(s\)で命題\((v = d)\)が成立</li>
+					</ul>
+					<li>\((v = d) \in L(s)\)</li>
+				</ul>
+			</ul>
+			<li>一般的な命題も一階述語論理で記述可能</li>
+			<ul>
+				<li>ex.) \(v_1 > v_2 \land v_2 > v_3\)</li>
+			</ul>
+			<li>各label \(l \in \mathit{AP}\)に対し:</li>
+			<ul>
+				<li>\(s \vDash l\): \(l \in L(s)\)  (状態\(s\)でlabel \(l\)はtrue)</li>
+				<li>\(s \not \vDash l\): \(l \not \in L(s)\)</li>
+			</ul>
+		</ul>
+
+		<h4>first-order logicでKripke structureを再び構成してみよう</h4>
+		<ul>
+			<li>states \(S\)の集合 = \(V\)に対しての全てのvaluationの集合</li>
+			<li>initial states \(S_0\)の集合 = 式\(\mathcal{S}_0\)を満たす(\(s_0 \vDash \mathcal{S}_0\))全てのvaluationの集合</li>
+			<li>2つのstate \(s,s'\)が\(R(s,s')\)の関係にある  \(\; \mathit{iff} \;\) \(s,s' \vDash \mathcal{R}\)</li>
+			<li>\(L(s)\)は、state \(s\)においてtrueとなる全てのラベルの集合(\(s \vDash l\))</li>
+		</ul>
+
+		<h4>例題</h4>
+		<div class="flex">
+			<div class="flex-left" style="border-right: 1px dashed black;">
+				<div class="sticky">
+					<p>前提条件</p>
+					<ul>
+						<li>システム変数: \(V = \{x, y\}\)</li>
+						<li>変数のdomain: \(D = \{0,1,2\}\)</li>
+						<li>valuationの表現方法: \((x\texttt{の値},y\texttt{の値})\)</li>
+						<li>initial state: \(\mathcal{S}_0(x,y) \equiv x=1 \land y=1\)</li>
+						<li>systemの1動作: \(x:= (x+y) \;\mathit{mod}\; 3\)</li>
+						<ul>
+							<li>
+								transitionの集合:<br>
+								\(\quad \mathcal{R}(\{x,y\},\{x',y'\}) \)<br>
+								\(\quad\quad \equiv x':= (x+y) \;\mathit{mod}\; 3 \land y'=y\)</li>
+						</ul>
+					</ul>
+				</div>
+			</div>
+			<div class="flex-right">
+				<p>Kripke structure \(M = (S, S_0, R, \mathit{AP}, L)\)を定義する</p>
+				<ul>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(S=\)?</summary>
+						\(S=\{(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)\} = D\times D\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(S_0=\)?</summary>
+						\(S_0=\{(1,1)\}\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(R=\)?</summary>
+						<table border="1">
+							<thead>
+								<tr>
+									<th>\(x\)</th>
+									<th>\(y\)</th>
+									<th>\((x',y')\)</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td rowspan="3">\(0\)</td>
+									<td>\(0\)</td>
+									<td>\((0,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((1,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((2,2)\)</td>
+								</tr>
+								<tr>
+									<td rowspan="3">\(1\)</td>
+									<td>\(0\)</td>
+									<td>\((1,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((2,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((0,2)\)</td>
+								</tr>
+								<tr>
+									<td rowspan="3">\(2\)</td>
+									<td>\(0\)</td>
+									<td>\((2,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((0,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((1,2)\)</td>
+								</tr>
+							</tbody>
+						</table>
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(\mathit{AP}=\)?　(ヒント: \(l \in \mathit{AP}: v = d\))</summary>
+						\(\mathit{AP}=\{x=0,x=1,x=2,y=0,y=1,y=2\}\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(L=\)?</summary>
+						<table border="1">
+							<thead>
+								<tr>
+									<th>state</th>
+									<th>label</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>\((0,0)\)</td>
+									<td>\(\{x=0,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((0,1)\)</td>
+									<td>\(\{x=0,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((0,2)\)</td>
+									<td>\(\{x=0,y=2\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,0)\)</td>
+									<td>\(\{x=1,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,1)\)</td>
+									<td>\(\{x=1,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,2)\)</td>
+									<td>\(\{x=1,y=2\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,0)\)</td>
+									<td>\(\{x=2,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,1)\)</td>
+									<td>\(\{x=2,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,2)\)</td>
+									<td>\(\{x=2,y=2\}\)</td>
+								</tr>
+							</tbody>
+						</table>
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(\mathit{path}=\)?</summary>
+						\(\mathit{path}=(1,1)(2,1)(0,1)(1,1)...\)
+					</details>
+				</ul>
+			</div>
+		</div>
+	</div>
+	
+	<div id="3.4 Boolean Encoding">
+		<h2>3.4 Boolean Encoding</h2>
+		<ul>
+			<li>命題論理 = true/falseの世界の話</li>
+			<ul>
+				<li>initial stateやrelationもbooleanで扱う(boolean encoding)ことができれば簡単</li>
+			</ul>
+		</ul>
+
+		<h4>例題</h4>
+		<img src="boolean_encoding.svg" alt="">
+		<ul>
+			<li>\(S_0\)を、\(v_0,v_1\)を使った論理式で表したい</li>
+			<ul>
+				<li>initial stateの\(v_0,v_1\)のペアを受け取った時だけ\(S_0(v_0,v_1)\)がtrueになるようにする</li>
+				<details>
+					<summary style="color: red; font-weight: bold;">\(S_0(v_0,v_1)=\)?</summary>
+					\(S_0(v_0,v_1) = \neg v_0 \land \neg v_1\)
+				</details>
+			</ul>
+			<li>\(R\)を、\(v_0,v_1,v'_0,v'_1\)を使った論理式で表したい</li>
+			<ul>
+				<li>transitionが存在するような\(v_0,v_1,v'_0,v'_1\)のタプルを受け取った時だけ\(R\)がtrueになるようにする</li>
+				<li>
+					\(R(\{v_0,v_1\},\{v'_0,v'_1\}) = \neg v_0 \land \neg v_1 \land v'_0 \land \neg v'_1 \)<br>
+					\(\qquad\qquad\qquad\qquad\quad \lor \quad v_0 \land \neg v_1 \land v'_1 \)<br>
+					\(\qquad\qquad\qquad\qquad\quad \lor \quad \neg v_0 \land v_1 \land \neg v'_0 \land \neg v'_1 \)<br>
+					\(\qquad\qquad\qquad\qquad\quad \lor \quad v_0 \land v_1 \land v'_0 \land v'_1 \)
+				</li>
+				<ul>
+					<details>
+						<summary>\(R(\{\mathit{false},\mathit{false}\},\{\mathit{true},\mathit{false}\})\)</summary>
+						\(= \neg \mathit{false} \land \neg \mathit{false} \land \mathit{true} \land \neg \mathit{false} \)<br>
+						\(\quad \lor \quad \mathit{false} \land \neg \mathit{false} \land \mathit{false} \)<br>
+						\(\quad \lor \quad \neg \mathit{false} \land \mathit{false} \land \neg \mathit{true} \land \neg \mathit{false} \)<br>
+						\(\quad \lor \quad \mathit{false} \land \mathit{false} \land \mathit{true} \land \mathit{false} \)<br>
+						\(=\mathit{true}\)
+					</details>
+					<details>
+						<summary>\(R(\{\mathit{false},\mathit{false}\},\{\mathit{false},\mathit{true}\})\)</summary>
+						\(= \neg \mathit{false} \land \neg \mathit{false} \land \mathit{false} \land \neg \mathit{true} \)<br>
+						\(\quad \lor \quad \mathit{false} \land \neg \mathit{false} \land \mathit{true} \)<br>
+						\(\quad \lor \quad \neg \mathit{false} \land \mathit{false} \land \neg \mathit{false} \land \neg \mathit{true} \)<br>
+						\(\quad \lor \quad \mathit{false} \land \mathit{false} \land \mathit{false} \land \mathit{true} \)<br>
+						\(=\mathit{false}\)
+					</details>
+				</ul>
+			</ul>
+			</ul>
+		</ul>
+	</div>
+	
+	<div id="3.5 Modeling Digital Circuits">
+		<h2>3.5 Modeling Digital Circuits</h2>
+		<p>digital circuitのtransition(relation)を論理式で表そう！</p>
+
+		<div id="3.5.1 State-holding Elements">
+			<h3>3.5.1 State-holding Elements</h3>
+
+			<ul>
+				<li>state-holding elements:</li>
+				<ul>
+					<li>circuit中のdataを保持するために使われる要素</li>
+					<li>ここでは0or1の値しか保持しないと仮定</li>
+				</ul>
+				<li>(0or1の値しかとらないので、)各要素に0or1の値を割り当て、式としてstateやtransitionを表現する</li>
+				<li>synchronousかasynchronousかによって、回路のどこがstate-holding elementsになるかは変わる</li>
+				<ul>
+					<li>synchronous: register(のoutput)</li>
+					<li>asynchronous: (circuit中の)wire</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="3.5.2 Synchronous circuits">
+			<h3>3.5.2 Synchronous circuits</h3>
+			<p>8 counter circuit systemを考える</p>
+			<div class="flex">
+				<div class="flex-right">
+					<img src="synchronous_sircuits.svg" alt="" width="300px" class="sticky">
+				</div>
+				<div class="flex-left">
+					<ul>
+						<li>state variables: \(V = \{v_0, v_1, v_2\}, V' = \{v'_0, v'_1, v'_2\}\)</li>
+						<li>transitions:</li>
+						<ul>
+							<li>\(v'_0 = \neg v_0\)</li>
+							<li>\(v'_1 = v_0 \oplus v_1\)</li>
+							<li>\(v'_2 = (v_0 \land v_1) \oplus v_2\)</li>
+						</ul>
+					</ul>
+					<p>このcircuitのtransit relationを論理式で表す</p>
+					<ol>
+						<li>各relationを論理式で表す</li>
+						<ul>
+							<li>\(\mathcal{R}_0(V,V') \equiv (v'_0 \Leftrightarrow \neg v_0)\)</li>
+							<li>\(\mathcal{R}_1(V,V') \equiv (v'_1 \Leftrightarrow v_0 \oplus v_1)\)</li>
+							<li>\(\mathcal{R}_2(V,V') \equiv (v'_2 \Leftrightarrow (v_0 \land v_1) \oplus v_2)\)</li>
+						</ul>
+						<li>1.のrelationを\(\land\)でつなげる</li>
+						<ul>
+							<li>\(\mathcal{R}(V,V') \equiv \mathcal{R}_0(V,V') \land \mathcal{R}_1(V,V') \land \mathcal{R}_2(V,V')\)</li>
+							<li>(synchronous circuitはクロックにしたがって、各状態が同時に遷移するため)</li>
+						</ul>
+					</ol>
+				</div>
+			</div>
+			<p>
+				一般的に、\(n\) state-holding elementsのsynchronous circuitにおいて、各状態変数\(v'_i\)に対して以下を満たすboolean関数\(f_i\)が存在する
+						\[v'_i = f_i(V) \qquad (V = \{v_0, v_1, v_2\}, V' = \{v'_0, v'_1, v'_2\})\]
+				これらの式を用いて、以下のようにrelationを定義する
+						\[\mathcal{R}_i(V,V') \equiv (v'_i \Leftrightarrow f_i(V))\]
+				各relationの\(\land\)を取ることで、回路全体のrelationを定義する
+						\[\mathcal{R}(V,V') \equiv \mathcal{R}_0(V,V') \land ... \land \mathcal{R}_{n-1}(V,V')\]
+			</p>
+			<ul>
+				<li>
+					※circuitの入力に関する変数に対しては\(f_i\)を定義せず、
+							\[\mathcal{R}_i(V,V') \equiv \mathit{true} \]	
+					としておく
+				</li>
+			</ul>
+		</div>
+
+		<div id="3.5.3 Asynchronous Circuits">
+			<h3>3.5.3 Asynchronous Circuits</h3>
+			<p>asynchronous circuitのtransition relationは基本的に\(\lor\)で表す</p>
+			<ul>
+				<li>circuitのすべてのコンポーネントが1つの出力をもち、内部状態を持たないと仮定する</li>
+				<!-- <li>各コンポーネントは関数\(f_i(V)\)によって表現することが可能</li>
+				<ul>
+					<li>コンポーネントは\(f_i(V)\)が表す値を出力する</li>
+				</ul> -->
+				<li>2つの異なるコンポーネントが同時に状態遷移をしない(interleaving semantics)と仮定する</li>
+				<ul>
+					<li>
+						\(\mathcal{R}(V,V') \equiv \mathcal{R}_0(V,V') \lor ... \lor \mathcal{R}_{n-1}(V,V')\)<br>
+						　where　\(\mathcal{R}_i(V,V') \equiv (v'_i \Leftrightarrow f_i(V)) \land \bigwedge_{j \not = i}(v'_j \Leftrightarrow v_j))\ \)
+					</li>
+				</ul>
+				<li>理論上、あるコンポーネントが繰り返し変更されても、他のコンポーネントが一歩も動かないことがある</li>
+				<ul>
+					<li>実用上では、このようなことはほとんどない</li>
+					<li>このような変更が偏る行動を許さないように、公平性の制約を追加してモデルを拡張することができる(ch.4)</li>
+				</ul>
+			</ul>
+
+			<h4>例題</h4>
+			<p>synchronousなmodelと、asynchronousなmodelの違いを考えてみよう</p>
+			<ul>
+				<li>\(V=\{v_0,v_1\}\)</li>
+				<li>\(v'_0 = v_0 \oplus v_1, v'_1 = v_0 \oplus v_1\)</li>
+				<li>initial state: \(v_0=1 \land v_1=1\)</li>
+			</ul>
+			<details>
+				<summary style="color: red; font-weight: bold;">synchronous modelでの次状態は？</summary>
+				\(v_0=0 \land v_1=0\)
+			</details>
+			<details>
+				<summary style="color: red; font-weight: bold;">asynchronous modelでの、先に\(v_0\)が更新された場合の次状態は？</summary>
+				\(v_0=0 \land v_1=1\)
+			</details>
+			<details>
+				<summary style="color: red; font-weight: bold;">asynchronous modelでの、先に\(v_1\)が更新された場合の次状態は？</summary>
+				\(v_0=1 \land v_1=0\)
+			</details>
+		</div>
+	</div>
+
+	<div id="3.6 Modeling Programs">
+		<h2>3.6 Modeling Programs</h2>
+		<p>sequantial programのmodel化を行った後、concurrent programのmodel化を行う</p>
+
+		<div id="3.6.1 Sequantial Processes">
+			<h3>3.6.1 Sequantial Processes</h3>
+			<ul>
+				<li>プログラムはsequantialにstatementを構成したものと捉える</li>
+				<li>translation procedure \(\mathcal{C}\):</li>
+				<ul>
+					<li>input: sequantial program \(P\)</li>
+					<li>output: first-order formula of transition set \(\mathcal{R}\)</li>
+				</ul>
+			</ul>
+
+			<h4>statementにラベル付けを行う</h4>
+			<ul>
+				<li>プログラム内の各statementの入口と出口が一意にラベル付けされていれば、translationは簡略化できる</li>
+				<li>ラベル付けされていないプログラム\(P\)が与えられると、ラベル付けされたプログラム\(P^{\mathcal{L}}\)になるようなラベル付け変換を定義する</li>
+				<ul>
+					<li>このラベルをprogram locationと呼ぶ</li>
+					<li>sequantial programでは、exit pointと次のstatementのentry pointは同一</li>
+					<img src="statement_labeling.svg" alt="">
+				</ul>
+				<li>一般的なstatementに対するラベル付け変換を以下のように定義する</li>
+				<ul>
+					<li>\(P\)がcomposite statementでないとき(x:=e, skip, wait, lock, unlock, etc.)</li>
+					<img src="labeling_uncomposite.svg" alt="">
+					<li>\(P\)がsequenceのとき(\(P_1;P_2\))</li>
+					<img src="labeling_sequence.svg" alt="">
+					<li>\(P\)がifのとき(if \(b\) then \(P_1\) else \(P_2\) end if)</li>
+					<img src="labeling_if.svg" alt="">
+					<li>\(P\)がwhileのとき(while \(b\) do \(P_1\) end while)</li>
+					<img src="labeling_while.svg" alt="">
+				</ul>
+			</ul>
+
+			<h4>program counterの定義</h4>
+			<p>次に、実行中のprogram locationを特定できるような変数を導入する</p>
+			<ul>
+				<li>program counter \(\mathcal{pc}\):</li>
+				<ul>
+					<li>実行中のprogram locationを指す</li>
+					<li><span style="font-weight: bold;">susp</span>: プログラムがsuspendedであることを表す</li>
+					<ul>
+						<li>concurrent programでactiveでないことを表すのに使う</li>
+					</ul>
+				</ul>
+			</ul>
+
+			<h4>translation procedureの定義</h4>
+			<p>translation procedure \(\mathcal{C}\)を考えていく</p>
+			<ul>
+				<li>各遷移では、多くの変数に変化はないので、それを表す補助関数を導入する</li>
+				<ul>
+					<li>\(\mathit{same}(Y) = \bigwedge_{y \in Y}(y'=y\))</li>
+				</ul>
+				<li>まずはinitial stateを記述する</li>
+				<ul>
+					<li>\(S_0(V,\mathit{pc}) \equiv \mathit{pre}(V) \land \mathit{pc} = m\)</li>
+					<ul>
+						<li>\(\mathit{pre}(V)\): プログラム\(P\)のinitial valueを表す条件式</li>
+						<li>\(m\): プログラム\(P\)のentry point</li>
+					</ul>
+				</ul>
+				<li>translation procedure \(\mathcal{C}\)は以下の3つの引数に依存</li>
+				<ul>
+					<li>entry label: \(l\)</li>
+					<li>labeld statement: \(P\)</li>
+					<li>exit label: \(l'\)</li>
+				</ul>
+				<li>translation procedure \(\mathcal{C}\)でprogram statementを再帰的に論理式に変換する</li>
+				<ul>
+					<li>statement毎に変換ルールを定める</li>
+				</ul>
+			</ul>
+
+			<h4>Assignment</h4>
+			<ul>
+				<li>\(\mathcal{C}(l, v:=e, l') \equiv \mathit{pc}=l \land \mathit{pc'}=l' \land v'=e \land \mathit{same}(V \setminus \{v\}) \)</li>
+			</ul>
+					
+			<h4>Skip</h4>
+			<ul>
+				<li>\(\mathcal{C}(l, \mathit{skip}, l') \equiv \mathit{pc}=l \land \mathit{pc'}=l' \land \mathit{same}(V) \)</li>
+			</ul>
+					
+			<h4>Sequantial composition</h4>
+			<ul>
+				<li>\(\mathcal{C}(l, P_1;l'':P_2, l') \equiv \mathcal{C}(l, \mathit{P}_1, l'') \lor \mathcal{C}(l'', \mathit{P}_2, l')\)</li>
+				<img src="translation_procedure_seq.svg" alt="">
+			</ul>
+					
+			<h4>Conditional</h4>
+			<ul>
+				<li>
+					\(\mathcal{C}(l, \)if \(b\) then \(l_1:P_1\) else \(l_2:P_2\) end if\(, l') \equiv (\mathit{pc}=l \land \mathit{pc'}=l_1 \land b=\mathit{true} \land \mathit{same}(V))\)<br>
+					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor (\mathit{pc}=l \land \mathit{pc'}=l_2 \land b=\mathit{false} \land \mathit{same}(V)) \)<br>
+					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_1, \mathit{P}_1, l') \)<br>
+					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_2, \mathit{P}_2, l') \)<br>
+				</li>
+				<img src="translation_procedure_if.svg" alt="">
+			</ul>
+					
+			<h4>While</h4>
+			<ul>
+				<li>
+					\(\mathcal{C}(l, \)while \(b\) do \(P_1\) end while\(, l') \equiv (\mathit{pc}=l \land \mathit{pc'}=l_1 \land b=\mathit{true} \land \mathit{same}(V))\)<br>
+					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor (\mathit{pc}=l \land \mathit{pc'}=l' \land b=\mathit{false} \land \mathit{same}(V)) \)<br>
+					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_1, \mathit{P}_1, l) \)<br>
+				</li>
+				<img src="translation_procedure_while.svg" alt="">
+			</ul>
+		</div>
+	</div>
+
+	<div id="3.6.2 Modeling Concurrent Processes">
+		<h2>3.6.2 Modeling Concurrent Processes</h2>
+	</div>
+	<!-- <p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
+	<pre>
+		<code class="language-py">
+			import Prism from prismjs;
+			
+			x = 10
+			print(x)
+		</code>
+	</pre>
+	<pre data-line="3">
+		<code class="language-css line-numbers">
+			p {
+				color: red;
+			}
+		</code>
+	</pre>
+
+	<p>inline code</p>
+	<code class="language-c">print()</code> -->
+</body>
+
+</html>
+

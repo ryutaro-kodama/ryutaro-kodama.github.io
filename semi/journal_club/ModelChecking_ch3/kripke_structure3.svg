@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="488px"
+  height="92px" viewBox="-0.5 -0.5 488 92"
+  content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2021-06-26T07:34:33.151Z&quot; agent=&quot;5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36&quot; etag=&quot;7Y9NegMjqWQfixqoeDAi&quot; version=&quot;14.8.1&quot;&gt;&lt;diagram id=&quot;zeZKRvGi1VqFJkYama4f&quot; name=&quot;Page-1&quot;&gt;3ZhNc5swEIZ/DTPtIRkkIcDHOE7bS2bacWeaHhWQQS22iJBt3F/fJRLmy46dNG4+fEG7Wr1Cu48ExiGX8/KzYnl6LWOeOdiNS4dMHIyRS0K4VJ6N8XjhyDgSJWIb1Dim4g+vR1rvUsS86ARqKTMt8q4zkosFj3THx5SS627YTGbdWXOW8IFjGrFs6P0hYp1aL/JHTccXLpLUTh3iwHTMWR1sV1KkLJbrlotcOeRSSalNa15e8qxKXp0XM+7Tnt7tjSm+0McMmPBf9Hry7S6QbCbw96t0fTs+syorli3tgh3sZ6A3nkmQhbvWG5sK/24p646z4r5QFxCA/LxsOqGVVNcpqnVuVe3rKUcyk6qj7GAymxH4DfWcYJw7waSWgFUala7ycK5BIO6sCUOKgCQwxutUaD7NWVT1rAFm8KV6noGFoMmK3OA1EyWPt1IrrjQv91YEbesMG4TLOddqAyF2APYsGnZvIN/a64a00LrSNmPWxyzbyVa5KT80LAGPoAGfiga8v0JFzhY7lS0flapKbj9gSp2KcFiZS1Gr+XEnLV1YzCRvGhbPfWWwkFPBQv47LLnpvnt30FD/lUHj7YCmn7BFfFE9uMGKMlYUIurmCZauNjdguLXxszLOaW1OynbnZGMtMxGPB8/7XjLhBYOphOtDT81h0ltJpTuSWvsUz5gWq+5t7Mq0neGrFPf7qezV0NYUu71iFXKpIm5HtV8IekK4f6KMekImDwOh+8Jvl/10FugzsFAKfdNqt0gAqwGhMmoOCq3k7+3LHHoUGSa1h9+nDhKEX5Ig2iv8YLsfS1D/mTRA8cQE+YcJipZqVZ2m9uh4Ak4PwrTnMDpwFJ0UQXwkguRdIEhpT4gchyBwwDatsLwKKB64Ydw7LL3Ovy1oGMVn5Ts4Ed9ui290HN+ozTd6Sb7JWzhivSA8x6GHAwRNz8eIdOkJ0XmAaIDDgGJKgjB4Iv09ndGjZjnR1sD+P20NMJuPIia8+bRErv4C&lt;/diagram&gt;&lt;/mxfile&gt;"
+  style="background-color: rgb(255, 255, 255);">
+  <defs />
+  <g>
+    <ellipse cx="127" cy="45" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 78px; height: 1px; padding-top: 45px; margin-left: 88px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                <font style="font-size: 16px">S1<br />
+                  <font color="#ff3333">{p}</font><br />
+                </font>
+              </div>
+            </div>
+          </div>
+        </foreignObject><text x="127" y="49" fill="#000000" font-family="Helvetica" font-size="12px"
+          text-anchor="middle">S1...</text>
+      </switch>
+    </g>
+    <ellipse cx="287" cy="45" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 78px; height: 1px; padding-top: 45px; margin-left: 248px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                <font style="font-size: 16px">S2<br /><span style="color: rgb(255 , 51 , 51)">{}</span><br /></font>
+              </div>
+            </div>
+          </div>
+        </foreignObject><text x="287" y="49" fill="#000000" font-family="Helvetica" font-size="12px"
+          text-anchor="middle">S2...</text>
+      </switch>
+    </g>
+    <ellipse cx="447" cy="45" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all" />
+    <g transform="translate(-0.5 -0.5)">
+      <switch>
+        <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%"
+          requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <div xmlns="http://www.w3.org/1999/xhtml"
+            style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 78px; height: 1px; padding-top: 45px; margin-left: 408px;">
+            <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+              <div
+                style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                <font style="font-size: 16px">S3<br /><span style="color: rgb(255 , 51 , 51)">{p, q}</span><br /></font>
+              </div>
+            </div>
+          </div>
+        </foreignObject><text x="447" y="49" fill="#000000" font-family="Helvetica" font-size="12px"
+          text-anchor="middle">S3...</text>
+      </switch>
+    </g>
+    <path d="M 7 45 L 80.63 45" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 85.88 45 L 78.88 48.5 L 80.63 45 L 78.88 41.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10"
+      pointer-events="all" />
+    <path d="M 167 45 L 240.63 45" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" />
+    <path d="M 245.88 45 L 238.88 48.5 L 240.63 45 L 238.88 41.5 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 315.28 16.72 Q 367 -15 413.29 13.39" fill="none" stroke="#000000" stroke-miterlimit="10"
+      pointer-events="stroke" />
+    <path d="M 417.76 16.13 L 409.97 15.46 L 413.29 13.39 L 413.63 9.49 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+    <path d="M 418.72 73.28 Q 367 105 320.71 76.61" fill="none" stroke="#000000" stroke-miterlimit="10"
+      pointer-events="stroke" />
+    <path d="M 316.24 73.87 L 324.03 74.54 L 320.71 76.61 L 320.37 80.51 Z" fill="#000000" stroke="#000000"
+      stroke-miterlimit="10" pointer-events="all" />
+  </g>
+  <switch>
+    <g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" /><a transform="translate(0,-5)"
+      xlink:href="https://www.diagrams.net/doc/faq/svg-export-text-problems" target="_blank"><text text-anchor="middle"
+        font-size="10px" x="50%" y="100%">Viewer does not support full SVG 1.1</text></a>
+  </switch>
+</svg>
