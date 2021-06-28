@@ -15,28 +15,31 @@
 <body>
   <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
   <h1>Modeling Systems</h1>
-  <h2>Overview</h2>
 
 	<div id="Introduction">
 		<h2>Introduction</h2>
 		<ul>
 			<li>システムの正しさの証明に必要な最初のステップ: 要求工学(requirements engineering)</li>
 			<ul>
-				<li>システムが持つべき特徴を指定</li>
-				<li>その特徴の審議を評価する抽象化のレベルを考える</li>
+				<li>システムが持つべき特徴を指定(specification)</li>
+				<li>その特徴の真偽を評価する抽象化のレベルを考える</li>
 			</ul>
-			<li>本章ではformal modelを扱う</li>
+			<li>specificationとmodelどっちも大事</li>
 			<ul>
-				<li>requirements engineeringでは、informal -> formalな形で定義していくことが多い</li>
-				<li>specificationとmodelどっちも大事</li>
+				<li>ex.)concurrent programでのdead lock判定</li>
 				<ul>
-					<li>ex.)concurrent programでのdead lock判定</li>
 					<li>「dead lockがない」ということを表す正確な仕様が必要なだけではない</li>
 					<li>concurrent program(atomic operationやscheduling policies)を適切に表現するやり方も必要</li>
 				</ul>
-				<li>次章ではtemporal logicによるformal specificationsを導入する</li>
 			</ul>
-			<li>次のステップ：modelの構築</li>
+			<ul>
+				<li>本章ではformal modelを扱う</li>
+				<ul>
+					<li>次章ではtemporal logicによるformal specificationsを導入する</li>
+					<li>requirements engineeringでは、informal -> formalな形で定義していくことが多い</li>
+				</ul>
+			</ul>
+			<li>modelの構築</li>
 			<ul>
 				<li>検証の自動化のため、"特徴"に影響を与える部分を捉える</li>
 				<li>(逆に、無関係な部分は削る)</li>
@@ -61,11 +64,11 @@
 				<li>内部状態を元にしたモデルを構築する</li>
 				<ul>
 					<li>「どのような状態遷移(state transition)が起きるのか」を解析するのが大事</li>
-					<li>各state transitionを連ねると、pathになる</li>
+					<!-- <li>各state transitionを連ねると、pathになる</li> -->
+					<li>state transitionを表すグラフとして、Kripke structureを使う</li>
 				</ul>
 			</ul>
-			<li>state transitionを表すグラフとして、Kripke structureを使う</li>
-			<ul>
+			<!-- <ul>
 				<li>\(M=(S, R, L(,I) )\)</li>
 				<ul>
 					<li>\(S\):state</li>
@@ -73,17 +76,17 @@
 					<li>\(L\):label(stateが持つ特徴を返す関数)</li>
 					<li>\(I\):initial state</li>
 				</ul>
-			</ul>
+			</ul> -->
 			<li>世の中には数多くの"言語"、数多くの"システム"が存在する</li>
 			<ul>
 				<li>これらを統一的に扱ってmodel化したい</li>
-				<li>一階述語論理をprogramとmodelの間のクッション材としてはさむ</li>
+				<li>一階述語論理をprogramとmodelの間の架け橋として使う</li>
 			</ul>
-			<li>この後の内容:</li>
+			<p>この後の内容:</p>
 			<ul>
-				<li>Kripke structureの形式的定義</li>
+				<li>Kripke structureの形式的定義()</li>
 				<li>一階述語論理からKripke structureに変換する方法</li>
-				<li>programming制作物を一階述語論理に変換する方法</li>
+				<li>programを一階述語論理に変換する方法</li>
 				<li>(プログラムをKripke structureでmodel化することが可能になる)</li>
 			</ul>
 		</ul>
@@ -111,12 +114,12 @@
 		<h4>path</h4>
 		<ul>
 			<li>path = finite path \(\lor\) infinite path</li>
-			<li>(sの)finite path = sequence \(s_0, s_1, ..., s_n\)</li>
+			<li>(\(s\)の)finite path = sequence \(s_0, s_1, ..., s_n\)</li>
 			<ul>
 				<li>\(s_0 = s\)</li>
 				<li>\(R(s_i, s_{i+1})\) for all \(0 \leq i < n\)</li>
 			</ul>
-			<li>(sの)infinite path = sequence \(s_0, s_1, ...\)</li>
+			<li>(\(s\)の)infinite path = sequence \(s_0, s_1, ...\)</li>
 			<ul>
 				<li>\(s_0 = s\)</li>
 				<li>\(R(s_i, s_{i+1})\) for all \(0 \leq i\)</li>
@@ -157,17 +160,17 @@
 						<thead>
 							<tr>
 								<th>label</th>
-								<th>properties</th>
+								<th>atomic proposition</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
 								<td>a</td>
-								<td>共有変数aにアクセス可能</td>
+								<td>変数aが0に等しい</td>
 							</tr>
 							<tr>
 								<td>b</td>
-								<td>共有変数bにアクセス可能</td>
+								<td>変数bが1に等しい</td>
 							</tr>
 						</tbody>
 					</table>
@@ -257,7 +260,7 @@
 			</ul>
 		</ul>
 
-		<p>状態をsystem variableで表す</p>
+		<h4>first-order logicで状態を表現してみよう</h4>
 		<ul>
 			<li>state \(s: V \rightarrow \cup_{v \in V} D_v\)</li>
 			<ul>
@@ -286,7 +289,7 @@
 			</ul>
 		</ul>
 
-		<p>first-order formulaを使うメリット1: 式の単純化が可能</p>
+		<h4>first-order formulaを使うメリット1: 式の単純化が可能</h4>
 		<ul>
 			<li>
 				\( ((v_1 = 2) \land (v_2 = 3) \land (v_3 = 1)) \; \lor \) <br>
@@ -295,7 +298,7 @@
 			</li>
 		</ul>
 		
-		<p>first-order formulaを使うメリット2: (通常の)集合演算を適用可能</p>
+		<h4>first-order formulaを使うメリット2: (通常の)集合演算を適用可能</h4>
 		<ul>
 			<li>\(A, B\): 状態集合\(S\)のsubset</li>
 			<li>\(\mathcal{A}(s), \mathcal{B}(s)\): 対応するfirst-order formula</li>
@@ -329,13 +332,13 @@
 			</li>
 		</ul>
 
-		<p>first-order logicでtransition relationを表現してみよう</p>
+		<h4>first-order logicでtransition relationを表現してみよう</h4>
 		<ul>
 			<li>状態遷移前後どちらかのみで必要な変数があるかもしれないので、状態遷移前後でのsystem variablesの集合を分ける</li>
 			<ul>
 				<li>\(V\): present state variables</li>
 				<li>\(V'\): next state variables</li>
-				<li>変数\(v \in V \cup V'\)のvariationの変化は、transitionに対応する</li>
+				<li>変数\(v (\in V \cup V')\)のvariationの変化が、transitionに対応する</li>
 			</ul>
 			<li>transition relation \(R \subseteq S \times S\)に対し:</li>
 			<ul>
@@ -343,8 +346,8 @@
 			</ul>
 			<ul>
 				<li>
-					ex.) \(V = V' = \{v_1, v_2, v_3\}\)のもとで<br>
-					\( \qquad\qquad (v_1' = v_1) \land (v_2' = v_2 + 1)\)<br>
+					ex.) \(V = \{v_1, v_2, v_3\}\)のもとで<br>
+					\( \qquad\qquad \mathcal{R}(V,V') = (v_1' = v_1) \land (v_2' = v_2 + 1)\)<br>
 					は、
 					<ul>
 						<li>\(v_1\): <span style="color: red;">一定・増えた・減った・関係ない</span></li>
@@ -364,7 +367,7 @@
 			</ul>
 		</ul>
 
-		<p>first-order logicでatomic propositionを表現してみよう</p>
+		<h4>first-order logicでatomic propositionを表現してみよう</h4>
 		<ul>
 			<li>あるpropertyがtrueであるかfalseであるかは、state(=valuation)に依る</li>
 			<ul>
@@ -392,151 +395,160 @@
 			</ul>
 		</ul>
 
-		<p>Kripke structureを再び構成してみよう</p>
+		<h4>first-order logicでKripke structureを再び構成してみよう</h4>
 		<ul>
 			<li>states \(S\)の集合 = \(V\)に対しての全てのvaluationの集合</li>
-			<li>initial states \(S_0\)の集合 = 式\(\mathcal{S}_0\)を満たす(\(s \vDash \mathcal{S}_0\))全てのvaluationの集合</li>
+			<li>initial states \(S_0\)の集合 = 式\(\mathcal{S}_0\)を満たす(\(s_0 \vDash \mathcal{S}_0\))全てのvaluationの集合</li>
 			<li>2つのstate \(s,s'\)が\(R(s,s')\)の関係にある  \(\; \mathit{iff} \;\) \(s,s' \vDash \mathcal{R}\)</li>
 			<li>\(L(s)\)は、state \(s\)においてtrueとなる全てのラベルの集合(\(s \vDash l\))</li>
 		</ul>
 
 		<h4>例題</h4>
-		<p>前提条件</p>
-		<ul>
-			<li>システム変数: \(V = \{x, y\}\)</li>
-			<li>変数のdomain: \(D = \{0,1,2\}\)</li>
-			<li>valuationの表現方法: \((x\texttt{の値},y\texttt{の値})\)</li>
-			<ul>
-				<li>initial state: \(\mathcal{S}_0(x,y) \equiv x=1 \land y=1\)</li>
-			</ul>
-			<li>systemの1動作: \(x:= (x+y) \;\mathit{mod}\; 3\)</li>
-			<ul>
-				<li>transitionの集合: \(\mathcal{R}(\{x,y\},\{x',y'\}) \equiv x':= (x+y) \;\mathit{mod}\; 3 \land y'=y\)</li>
-			</ul>
-		</ul>
-		<p>Kripke structure \(M = (S, S_0, R, \mathit{AP}, L)\)を定義する</p>
-		<ul>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(S=\)?</summary>
-				\(S=\{(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)\} = D\times D\)
-			</details>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(S_0=\)?</summary>
-				\(S_0=\{(1,1)\}\)
-			</details>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(R=\)?</summary>
-				<table border="1">
-					<thead>
-						<tr>
-							<th>\(x\)</th>
-							<th>\(y\)</th>
-							<th>\((x',y')\)</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td rowspan="3">\(0\)</td>
-							<td>\(0\)</td>
-							<td>\((0,0)\)</td>
-						</tr>
-						<tr>
-							<td>\(1\)</td>
-							<td>\((1,1)\)</td>
-						</tr>
-						<tr>
-							<td>\(2\)</td>
-							<td>\((2,2)\)</td>
-						</tr>
-						<tr>
-							<td rowspan="3">\(1\)</td>
-							<td>\(0\)</td>
-							<td>\((1,0)\)</td>
-						</tr>
-						<tr>
-							<td>\(1\)</td>
-							<td>\((2,1)\)</td>
-						</tr>
-						<tr>
-							<td>\(2\)</td>
-							<td>\((0,2)\)</td>
-						</tr>
-						<tr>
-							<td rowspan="3">\(2\)</td>
-							<td>\(0\)</td>
-							<td>\((2,0)\)</td>
-						</tr>
-						<tr>
-							<td>\(1\)</td>
-							<td>\((0,1)\)</td>
-						</tr>
-						<tr>
-							<td>\(2\)</td>
-							<td>\((1,2)\)</td>
-						</tr>
-					</tbody>
-				</table>
-			</details>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(\mathit{AP}=\)?　(ヒント: \(l \in \mathit{AP}: v = d\))</summary>
-				\(\mathit{AP}=\{x=0,x=1,x=2,y=0,y=1,y=2\}\)
-			</details>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(L=\)?</summary>
-				<table border="1">
-					<thead>
-						<tr>
-							<th>state</th>
-							<th>label</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>\((0,0)\)</td>
-							<td>\(\{x=0,y=0\}\)</td>
-						</tr>
-						<tr>
-							<td>\((0,1)\)</td>
-							<td>\(\{x=0,y=1\}\)</td>
-						</tr>
-						<tr>
-							<td>\((0,2)\)</td>
-							<td>\(\{x=0,y=2\}\)</td>
-						</tr>
-						<tr>
-							<td>\((1,0)\)</td>
-							<td>\(\{x=1,y=0\}\)</td>
-						</tr>
-						<tr>
-							<td>\((1,1)\)</td>
-							<td>\(\{x=1,y=1\}\)</td>
-						</tr>
-						<tr>
-							<td>\((1,2)\)</td>
-							<td>\(\{x=1,y=2\}\)</td>
-						</tr>
-						<tr>
-							<td>\((2,0)\)</td>
-							<td>\(\{x=2,y=0\}\)</td>
-						</tr>
-						<tr>
-							<td>\((2,1)\)</td>
-							<td>\(\{x=2,y=1\}\)</td>
-						</tr>
-						<tr>
-							<td>\((2,2)\)</td>
-							<td>\(\{x=2,y=2\}\)</td>
-						</tr>
-					</tbody>
-				</table>
-			</details>
-			<details>
-				<summary style="color: red; font-weight: bold;">\(\mathit{path}=\)?</summary>
-				\(\mathit{path}=(1,1)(2,1)(0,1)(1,1)...\)
-			</details>
-		</ul>
+		<div class="flex">
+			<div class="flex-left" style="border-right: 1px dashed black;">
+				<div class="sticky">
+					<p>前提条件</p>
+					<ul>
+						<li>システム変数: \(V = \{x, y\}\)</li>
+						<li>変数のdomain: \(D = \{0,1,2\}\)</li>
+						<li>valuationの表現方法: \((x\texttt{の値},y\texttt{の値})\)</li>
+						<li>initial state: \(\mathcal{S}_0(x,y) \equiv x=1 \land y=1\)</li>
+						<li>systemの1動作: \(x:= (x+y) \;\mathit{mod}\; 3\)</li>
+						<ul>
+							<li>
+								transitionの集合:<br>
+								\(\quad \mathcal{R}(\{x,y\},\{x',y'\}) \)<br>
+								\(\quad\quad \equiv x':= (x+y) \;\mathit{mod}\; 3 \land y'=y\)</li>
+						</ul>
+					</ul>
+				</div>
+			</div>
+			<div class="flex-right">
+				<p>Kripke structure \(M = (S, S_0, R, \mathit{AP}, L)\)を定義する</p>
+				<ul>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(S=\)?</summary>
+						\(S=\{(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)\} = D\times D\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(S_0=\)?</summary>
+						\(S_0=\{(1,1)\}\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(R=\)?</summary>
+						<table border="1">
+							<thead>
+								<tr>
+									<th>\(x\)</th>
+									<th>\(y\)</th>
+									<th>\((x',y')\)</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td rowspan="3">\(0\)</td>
+									<td>\(0\)</td>
+									<td>\((0,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((1,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((2,2)\)</td>
+								</tr>
+								<tr>
+									<td rowspan="3">\(1\)</td>
+									<td>\(0\)</td>
+									<td>\((1,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((2,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((0,2)\)</td>
+								</tr>
+								<tr>
+									<td rowspan="3">\(2\)</td>
+									<td>\(0\)</td>
+									<td>\((2,0)\)</td>
+								</tr>
+								<tr>
+									<td>\(1\)</td>
+									<td>\((0,1)\)</td>
+								</tr>
+								<tr>
+									<td>\(2\)</td>
+									<td>\((1,2)\)</td>
+								</tr>
+							</tbody>
+						</table>
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(\mathit{AP}=\)?　(ヒント: \(l \in \mathit{AP}: v = d\))</summary>
+						\(\mathit{AP}=\{x=0,x=1,x=2,y=0,y=1,y=2\}\)
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(L=\)?</summary>
+						<table border="1">
+							<thead>
+								<tr>
+									<th>state</th>
+									<th>label</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>\((0,0)\)</td>
+									<td>\(\{x=0,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((0,1)\)</td>
+									<td>\(\{x=0,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((0,2)\)</td>
+									<td>\(\{x=0,y=2\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,0)\)</td>
+									<td>\(\{x=1,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,1)\)</td>
+									<td>\(\{x=1,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((1,2)\)</td>
+									<td>\(\{x=1,y=2\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,0)\)</td>
+									<td>\(\{x=2,y=0\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,1)\)</td>
+									<td>\(\{x=2,y=1\}\)</td>
+								</tr>
+								<tr>
+									<td>\((2,2)\)</td>
+									<td>\(\{x=2,y=2\}\)</td>
+								</tr>
+							</tbody>
+						</table>
+					</details>
+					<details>
+						<summary style="color: red; font-weight: bold;">\(\mathit{path}=\)?</summary>
+						\(\mathit{path}=(1,1)(2,1)(0,1)(1,1)...\)
+					</details>
+				</ul>
+			</div>
+		</div>
 	</div>
-
+	
 	<div id="3.4 Boolean Encoding">
 		<h2>3.4 Boolean Encoding</h2>
 		<ul>
@@ -645,7 +657,7 @@
 				</div>
 			</div>
 			<p>
-				一般的に、\(n\) state-holding elementsのsynchronous circuitにおいて、各状態変数\(v'_i\)に対して以下を満たすはboolean関数\(f_i\)が存在する
+				一般的に、\(n\) state-holding elementsのsynchronous circuitにおいて、各状態変数\(v'_i\)に対して以下を満たすboolean関数\(f_i\)が存在する
 						\[v'_i = f_i(V) \qquad (V = \{v_0, v_1, v_2\}, V' = \{v'_0, v'_1, v'_2\})\]
 				これらの式を用いて、以下のようにrelationを定義する
 						\[\mathcal{R}_i(V,V') \equiv (v'_i \Leftrightarrow f_i(V))\]
@@ -666,10 +678,10 @@
 			<p>asynchronous circuitのtransition relationは基本的に\(\lor\)で表す</p>
 			<ul>
 				<li>circuitのすべてのコンポーネントが1つの出力をもち、内部状態を持たないと仮定する</li>
-				<li>各コンポーネントは関数\(f_i(V)\)によって表現することが可能</li>
+				<!-- <li>各コンポーネントは関数\(f_i(V)\)によって表現することが可能</li>
 				<ul>
 					<li>コンポーネントは\(f_i(V)\)が表す値を出力する</li>
-				</ul>
+				</ul> -->
 				<li>2つの異なるコンポーネントが同時に状態遷移をしない(interleaving semantics)と仮定する</li>
 				<ul>
 					<li>
@@ -720,6 +732,8 @@
 					<li>output: first-order formula of transition set \(\mathcal{R}\)</li>
 				</ul>
 			</ul>
+
+			<h4>statementにラベル付けを行う</h4>
 			<ul>
 				<li>プログラム内の各statementの入口と出口が一意にラベル付けされていれば、translationは簡略化できる</li>
 				<li>ラベル付けされていないプログラム\(P\)が与えられると、ラベル付けされたプログラム\(P^{\mathcal{L}}\)になるようなラベル付け変換を定義する</li>
@@ -740,6 +754,8 @@
 					<img src="labeling_while.svg" alt="">
 				</ul>
 			</ul>
+
+			<h4>program counterの定義</h4>
 			<p>次に、実行中のprogram locationを特定できるような変数を導入する</p>
 			<ul>
 				<li>program counter \(\mathcal{pc}\):</li>
@@ -751,6 +767,8 @@
 					</ul>
 				</ul>
 			</ul>
+
+			<h4>translation procedureの定義</h4>
 			<p>translation procedure \(\mathcal{C}\)を考えていく</p>
 			<ul>
 				<li>各遷移では、多くの変数に変化はないので、それを表す補助関数を導入する</li>
@@ -761,7 +779,7 @@
 				<ul>
 					<li>\(S_0(V,\mathit{pc}) \equiv \mathit{pre}(V) \land \mathit{pc} = m\)</li>
 					<ul>
-						<li>\(\mathit{pre}(V)\): プログラム\(P\)のinitial value</li>
+						<li>\(\mathit{pre}(V)\): プログラム\(P\)のinitial valueを表す条件式</li>
 						<li>\(m\): プログラム\(P\)のentry point</li>
 					</ul>
 				</ul>
@@ -814,6 +832,10 @@
 				<img src="translation_procedure_while.svg" alt="">
 			</ul>
 		</div>
+	</div>
+
+	<div id="3.6.2 Modeling Concurrent Processes">
+		<h2>3.6.2 Modeling Concurrent Processes</h2>
 	</div>
 	<!-- <p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
 	<pre>
