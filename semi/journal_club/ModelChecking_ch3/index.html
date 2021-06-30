@@ -1012,7 +1012,70 @@
 
 		<h4>Transitionの粒度</h4>
 		<ul>
-			<li></li>
+			<li>concurrent systemのモデリングにおいて、"transitionの粒度"を確認するのはとても大切</li>
+			<li>model上の処理の最小単位と、実装での処理の最小単位が一致しているか</li>
+			<ul>
+				<li>その処理は本当にatomic？？？</li>
+			</ul>
+			<li>
+				ex.) 以下のプログラムを考える
+				<div class="flex">
+					<div class="flex-left">
+						\[\qquad \alpha: \; x := x + y\]
+					</div>
+					<div class="flex-right">
+						\[\qquad \beta: \; y := y + x\] 
+					</div>
+				</div>
+			</li>
+			<ul>
+				<li>
+					このプログラムをアセンブリレベルでも考える
+					<div class="flex">
+						<div class="flex-left">
+							\(\qquad \alpha_0: \; \texttt{load} \; x, R_1\)<br>
+							\(\qquad \alpha_1: \; \texttt{add} \; y, R_1\)<br>
+							\(\qquad \alpha_2: \; \texttt{store} \; R_1, x\)
+						</div>
+						<div class="flex-right">
+							\(\qquad \beta_0: \; \texttt{load} \; y, R_2\)<br>
+							\(\qquad \beta_1: \; \texttt{add} \; x, R_2\)<br>
+							\(\qquad \beta_2: \; \texttt{store} \; R_2, y\)
+						</div>
+					</div>
+				</li>
+				<li>initial state: \(x = 1 \land y = 1\)</li>
+				<li>複数の実行結果を考えることができる</li>
+				<ul>
+					<li>\(\alpha \beta\): \(x = 3 \land y = 5\)</li>
+					<li>\(\beta \alpha\): \(x = 4 \land y = 3\)</li>
+					<li>\(\alpha_0 \beta_0 \alpha_1 \beta_1 \alpha_2 \beta_2\): \(x = 3 \land y = 3\)</li>
+				</ul>
+				<li>\(x=3 \land y=3\)にならないことを確認したい</li>
+				<ul>
+					<table border="1">
+						<thead>
+							<tr>
+								<th>model上の処理の最小単位</th>
+								<th>実装での処理の最小単位</th>
+								<th>解析結果</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>notアセンブリレベル</td>
+								<td>アセンブリレベル</td>
+								<td>(modelの粒度が粗すぎて、)エラーを見過ごしてしまう(FN)</td>
+							</tr>
+							<tr>
+								<td>アセンブリレベル</td>
+								<td>notアセンブリレベル</td>
+								<td>(modelの粒度が細かすぎて、)起こりえないエラーを検知してしまう(FP)</td>
+							</tr>
+						</tbody>
+					</table>
+				</ul>
+			</ul>
 		</ul>
 	</div>
 	<!-- <p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
