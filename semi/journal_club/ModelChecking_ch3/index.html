@@ -836,6 +836,184 @@
 
 	<div id="3.6.2 Modeling Concurrent Processes">
 		<h2>3.6.2 Modeling Concurrent Processes</h2>
+
+		<h4>concurrent systemとは</h4>
+		<ul>
+			<li>concurrent systemは同時に実行されるコンポーネントの集合から構成される</li>
+			<ul>
+				<li>コンポーネント同士はお互いにやり取りを行う</li>
+			</ul>
+			<li>実行の仕方には2種類ある</li>
+			<ul>
+				<li>asynchronous(interleaved exections): 1ステップで1コンポーネントだけが実行</li>
+				<ul>
+					<li>こちらのみ扱う</li>
+				</ul>
+				<li>synchronous: 1ステップで全てのコンポーネントが同時に実行</li>
+			</ul>
+			<li>コンポーネント間のやり取りの仕方にも2種類ある</li>
+			<ul>
+				<li>shared variables: 共有変数を介した値のやり取り</li>
+				<ul>
+					<li>こちらのみ扱う</li>
+				</ul>
+				<li>exchanging messages: queueやある種のprotocolに基づいたやり取り</li>
+			</ul>
+			<ul>
+				<li>concurrent program: 並列に実行されるプロセスの集合</li>
+				<li>process: sequantialなstatement</li>
+			</ul>
+		</ul>
+
+		<h4>シンボルの定義</h4>
+		<ul>
+			<li>\(P\): concurrent program</li>
+			<ul>
+				<li>\(P_i\): process</li>
+			</ul>
+			<li>\(V\): 全てのプログラム変数の集合</li>
+			<ul>
+				<li>\(V_i\): process \(P_i\)が変更する変数の集合</li>
+			</ul>
+			<li>\(\mathit{PC}\): 全てのprogram conuterの集合</li>
+			<ul>
+				<li>\(\mathit{pc}_i\): process \(P_i\)のprogram conuter</li>
+			</ul>
+		</ul>
+
+		<h4>concurrent programを論理式で表す</h4>
+		<ul>
+			<li>
+				concurrent program \(P\):
+				\[\texttt{cobegin} \; P_1 || P_2 || ... || P_n \; \texttt{coend}\]
+			</li>
+			<li>まずはラベル付けを行う</li>
+			<ul>
+				<li>
+					\(P = \texttt{cobegin} \; P_1 || P_2 || ... || P_n \; \texttt{coend}\)に対し、
+					\[P^{\mathcal{L}} = \texttt{cobegin} \; l_1:P_1^{\mathcal{L}} l'_1 || l_2:P_2^{\mathcal{L}} l'_2 || ... || l_n:P_n^{\mathcal{L}} l'_n \; \texttt{coend}\]
+				</li>
+				<li>各プロセス\(P_i\)に対し、</li>
+				<ul>
+					<li>プロセスの開始地点のprogram point: \(l_i\)</li>
+					<li>プロセスの終了地点のprogram point: \(l'_i\)</li>
+				</ul>
+			</ul>
+			<li>初期状態:</li>
+			<ul>
+				<li>\(\mathcal{S_0}(V,\mathit{PC}) \equiv \mathit{pre}(V) \land (\mathit{pc} = m) \land \bigwedge^n_{i=1}(\mathit{pc}_i = \texttt{susp})\)</li>
+				<li>プログラム実行開始時には、各プロセスは\(\texttt{susp}\)(activeでない)</li>
+			</ul>
+			<li>\(\mathcal{C}(l, \texttt{cobegin} \; l_1:P_1^{\mathcal{L}} l'_1 || l_2:P_2^{\mathcal{L}} l'_2 || ... || l_n:P_n^{\mathcal{L}} l'_n \; \texttt{coend}, l')\)を論理式で表す</li>
+			<ul>
+				<li><img src="" alt=""></li>
+				<li>
+					\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \) <br>
+					\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \) <br>
+					\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)
+				</li>
+				<ul>
+					<li>\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \)</li>
+					<li><img src="" alt=""></li>
+					<li>\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \)</li>
+					<li><img src="" alt=""></li>
+					<li>\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)</li>
+					<li><img src="" alt=""></li>
+				</ul>
+			</ul>
+		</ul>
+
+		<h4>共有変数の扱い</h4>
+		<ul>
+			<li><img src="shared_var.svg" alt=""></li>
+			<li>共有変数の排他的アクセスを可能にするために、よく使われる構文</li>
+			<ul>
+				<li>\(\texttt{Wait}\)</li>
+				<li>\(\texttt{Lock}\)</li>
+				<li>\(\texttt{Unlock}\)</li>
+				<li>これらも論理式で表す</li>
+			</ul>
+			<li>\(\texttt{Wait}\)</li>
+			<ul>
+				<li>busy waitingで実装されたものを考える</li>
+				<li>
+					\(\mathcal{C}(l, \texttt{wait}(b), l') \equiv (\mathit{pc_i} = l \land \mathit{pc'_i} = l \land \neg b \land \mathit{same}(V_i)) \)<br>
+					\(\qquad\qquad\qquad\qquad \lor (\mathit{pc_i} = l \land \mathit{pc'_i} = l' \land b \land \mathit{same}(V_i))\)
+				</li>
+			</ul>
+			<li>\(\texttt{Lock}\)</li>
+			<ul>
+				<li>\(\texttt{wait}(v=0)\)と考え方は似ている</li>
+				<ul>
+					<li>変数\(v\)が1の時はCSに侵入できず、0になったら他が侵入できないようにして、侵入する</li>
+				</ul>
+				<li>
+					\(\mathcal{C}(l, \texttt{lock}(v), l') \equiv (\mathit{pc_i} = l \land \mathit{pc'_i} = l \land v=1 \land \mathit{same}(V_i)) \)<br>
+					\(\qquad\qquad\qquad\qquad \lor (\mathit{pc_i} = l \land \mathit{pc'_i} = l' \land v=0 \land v'=1 \land \mathit{same}(V_i \setminus \{v\}))\)
+				</li>
+			</ul>
+			<li>\(\texttt{Unlock}\)</li>
+			<ul>
+				<li>
+					\(\mathcal{C}(l, \texttt{unlock}(v), l') \equiv (\mathit{pc_i} = l \land \mathit{pc'_i} = l' \land v'=0 \land \mathit{same}(V_i \setminus \{v\}))\)
+				</li>
+			</ul>
+		</ul>
+
+		<h4>例題3.4</h4>
+		<ul>
+			<li>以下のようなプログラムを考える</li>
+			<ul>
+				<li>\(P = m: \texttt{cobegin} \; P_0 || P_1 \; \texttt{coend} \; m'\)</li>
+				<div class="flex">
+					<li class="flex-left">
+						\(P_0 :: l_0 : \texttt{while} \; \mathit{true} \; \texttt{do}\)<br>
+						\(\qquad\qquad\qquad \mathit{NC_0} : \texttt{wait}(\mathit{turn}=0);\)<br>
+						\(\qquad\qquad\qquad \mathit{CR_0} : \mathit{turn}:=1\)<br>
+						\(\qquad\qquad \texttt{end while}; \)<br>
+						\(\qquad l'_0\)
+					</li>
+					<li class="flex-right">
+						\(P_1 :: l_1 : \texttt{while} \; \mathit{true} \; \texttt{do}\)<br>
+						\(\qquad\qquad\qquad \mathit{NC_1} : \texttt{wait}(\mathit{turn}=1);\)<br>
+						\(\qquad\qquad\qquad \mathit{CR_1} : \mathit{turn}:=0\)<br>
+						\(\qquad\qquad \texttt{end while}; \)<br>
+						\(\qquad l'_1\)
+					</li>
+				</div>
+			</ul>
+			<li>初期状態:</li>
+			<ul>
+				<li>\(S_0(V, \mathit{PC}) \equiv (\mathit{pc} = m) \land (\mathit{pc_0} = \texttt{susp}) \land (\mathit{pc_1} = \texttt{susp})\)</li>
+			</ul>
+			<li>translationの論理式:</li>
+			<ul>
+				<li>
+					\( \mathcal{R}(V, \mathit{PC}, V', \mathit{PC'}) \equiv (\mathit{pc} = m \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_0} = l_0 \land \mathit{pc'_1} = l_1) \) <br>
+					\(\qquad\qquad\qquad\qquad\qquad \lor (\mathcal{C}(l_0, P_0, l'_0) \land \mathit{same}(V \setminus V_0) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_0}\}) ) \) <br>
+					\(\qquad\qquad\qquad\qquad\qquad \lor (\mathcal{C}(l_1, P_1, l'_1) \land \mathit{same}(V \setminus V_1) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_1}\}) ) \) <br>
+					\(\qquad\qquad\qquad\qquad\qquad \lor (\mathit{pc'} = m' \land \mathit{pc_0} = l'_0 \land \mathit{pc_1} = l'_1 \land \mathit{pc'_0 = \texttt{susp}} \land \mathit{pc'_1 = \texttt{susp}} )\)
+				</li>
+			</ul>
+			<li>各プロセスでのstatementの論理式</li>
+			<ul>
+				<li>
+					\(\mathcal{C}(l_i, P_i, l'_i) \equiv (\mathit{pc_i} = l_i \land \mathit{pc'_i} = NC_i \land \mathit{true} \land \mathit{same}(\mathit{turn})) \)<br>
+					\(\qquad\qquad\qquad \lor (\mathit{pc_i} = \mathit{NC_i} \land \mathit{pc'_i} = \mathit{CR_i} \land \mathit{turn} = i \land \mathit{same}(\mathit{turn})) \)<br>
+					\(\qquad\qquad\qquad \lor (\mathit{pc_i} = \mathit{CR_i} \land \mathit{pc'_i} = l_i \land \mathit{turn'} = (i+1) \mathit{mod} \; 2) \)<br>
+					\(\qquad\qquad\qquad \lor (\mathit{pc_i} = \mathit{NC_i} \land \mathit{pc'_i} = \mathit{NC_i} \land \mathit{turn} \not = i \land \mathit{same}(\mathit{turn})) \)<br>
+					\(\qquad\qquad\qquad \lor (\mathit{pc_i} = l_i \land \mathit{pc'_i} = l'_i \land \mathit{false} \land \mathit{same}(\mathit{turn})) \)<br>
+				</li>
+			</ul>
+			<li><img src="" alt=""></li>
+			<li>排他アクセスは正しくできている</li>
+			<li>(starvationは起きる)</li>
+		</ul>
+
+		<h4>Transitionの粒度</h4>
+		<ul>
+			<li></li>
+		</ul>
 	</div>
 	<!-- <p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
 	<pre>
