@@ -194,14 +194,14 @@
 				<li>\(R=\{(s_1, s_2), (s_2, s_3), (s_3, s_2)\}\)</li>
 				<li>\(AP=\{p,q\}\)</li>
 				<li>\(L=\{s_1 \mapsto \{p\}, s_2 \mapsto \emptyset, s_3 \mapsto \{p,q\}\}\)</li>
-				<li><img src="kripke_structure.svg" alt=""></li>
+				<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/kripke_structure.svg" alt=""></li>
 				<details>
 					<summary style="color: red; font-weight: bold;">Q. 状態遷移の矢印を加えて</summary>
-					<img src="kripke_structure2.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/kripke_structure2.svg" alt="">
 				</details>
 				<details>
 					<summary style="color: red; font-weight: bold;">Q. labelを加えて</summary>
-					<img src="kripke_structure3.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/kripke_structure3.svg" alt="">
 				</details>
 			</ul>
 			<li>※文脈によってkripke structureが表すmodelが異なる</li>
@@ -227,7 +227,7 @@
 				<li>p: ボタンが押されている</li>	
 				<li>r: ボタンが押されていない</li>
 				<li>始めは電気がついていない</li>
-				<li><img src="light_switch.svg" alt=""></li>
+				<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/light_switch.svg" alt=""></li>
 			</ul>
 			<li>人間の行動をmodel化できないので、以下の部分にnondeterminismを使用する</li>
 			<ul>
@@ -559,7 +559,7 @@
 		</ul>
 
 		<h4>例題</h4>
-		<img src="boolean_encoding.svg" alt="">
+		<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/boolean_encoding.svg" alt="">
 		<ul>
 			<li>\(S_0\)を、\(v_0,v_1\)を使った論理式で表したい</li>
 			<ul>
@@ -628,7 +628,7 @@
 			<p>8 counter circuit systemを考える</p>
 			<div class="flex">
 				<div class="flex-right">
-					<img src="synchronous_sircuits.svg" alt="" width="300px" class="sticky">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/synchronous_sircuits.svg" alt="" width="300px" class="sticky">
 				</div>
 				<div class="flex-left">
 					<ul>
@@ -740,18 +740,18 @@
 				<ul>
 					<li>このラベルをprogram locationと呼ぶ</li>
 					<li>sequantial programでは、exit pointと次のstatementのentry pointは同一</li>
-					<img src="statement_labeling.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/statement_labeling.svg" alt="">
 				</ul>
 				<li>一般的なstatementに対するラベル付け変換を以下のように定義する</li>
 				<ul>
 					<li>\(P\)がcomposite statementでないとき(x:=e, skip, wait, lock, unlock, etc.)</li>
-					<img src="labeling_uncomposite.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_uncomposite.svg" alt="">
 					<li>\(P\)がsequenceのとき(\(P_1;P_2\))</li>
-					<img src="labeling_sequence.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_sequence.svg" alt="">
 					<li>\(P\)がifのとき(if \(b\) then \(P_1\) else \(P_2\) end if)</li>
-					<img src="labeling_if.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_if.svg" alt="">
 					<li>\(P\)がwhileのとき(while \(b\) do \(P_1\) end while)</li>
-					<img src="labeling_while.svg" alt="">
+					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_while.svg" alt="">
 				</ul>
 			</ul>
 
@@ -808,7 +808,7 @@
 			<h4>Sequantial composition</h4>
 			<ul>
 				<li>\(\mathcal{C}(l, P_1;l'':P_2, l') \equiv \mathcal{C}(l, \mathit{P}_1, l'') \lor \mathcal{C}(l'', \mathit{P}_2, l')\)</li>
-				<img src="translation_procedure_seq.svg" alt="">
+				<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/translation_procedure_seq.svg" alt="">
 			</ul>
 					
 			<h4>Conditional</h4>
@@ -819,7 +819,7 @@
 					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_1, \mathit{P}_1, l') \)<br>
 					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_2, \mathit{P}_2, l') \)<br>
 				</li>
-				<img src="translation_procedure_if.svg" alt="">
+				<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/translation_procedure_if.svg" alt="">
 			</ul>
 					
 			<h4>While</h4>
@@ -829,7 +829,7 @@
 					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor (\mathit{pc}=l \land \mathit{pc'}=l' \land b=\mathit{false} \land \mathit{same}(V)) \)<br>
 					\(\qquad\qquad\qquad\qquad\qquad\qquad\qquad \lor \mathcal{C}(l_1, \mathit{P}_1, l) \)<br>
 				</li>
-				<img src="translation_procedure_while.svg" alt="">
+				<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/translation_procedure_while.svg" alt="">
 			</ul>
 		</div>
 
@@ -905,7 +905,7 @@
 				</ul>
 				<li>\(\mathcal{C}(l, \texttt{cobegin} \; l_1:P_1^{\mathcal{L}} l'_1 || l_2:P_2^{\mathcal{L}} l'_2 || ... || l_n:P_n^{\mathcal{L}} l'_n \; \texttt{coend}, l')\)を論理式で表す</li>
 				<ul>
-					<li><img src="concurrent_program.svg" alt="" width="500px"></li>
+					<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_program.svg" alt="" width="500px"></li>
 					<li>
 						\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \) <br>
 						\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \) <br>
@@ -913,18 +913,18 @@
 					</li>
 					<ul>
 						<li>\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \)</li>
-						<li><img src="concurrent_entry.svg" alt="" width="500px"></li>
+						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_entry.svg" alt="" width="500px"></li>
 						<li>\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \)</li>
-						<li><img src="concurrent_body.svg" alt="" width="400px"></li>
+						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_body.svg" alt="" width="400px"></li>
 						<li>\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)</li>
-						<li><img src="concurrent_exit.svg" alt="" width="600px"></li>
+						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_exit.svg" alt="" width="600px"></li>
 					</ul>
 				</ul>
 			</ul>
 
 			<h4>共有変数の扱い</h4>
 			<ul>
-				<li><img src="shared_variable.svg" alt=""></li>
+				<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/shared_variable.svg" alt=""></li>
 				<li>共有変数の排他的アクセスを可能にするために、よく使われる構文</li>
 				<ul>
 					<li>\(\texttt{Wait}\)</li>
@@ -1010,7 +1010,7 @@
 						\(\qquad\qquad\qquad \lor (\mathit{pc_i} = l_i \land \mathit{pc'_i} = l'_i \land \mathit{false} \land \mathit{same}(\mathit{turn})) \)<br>
 					</li>
 				</ul>
-				<li><img src="reachable_state.png" alt="" width="600px"></li>
+				<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/reachable_state.png" alt="" width="600px"></li>
 				<li>排他アクセスは正しくできている</li>
 				<li>(starvationは起きる)</li>
 			</ul>
