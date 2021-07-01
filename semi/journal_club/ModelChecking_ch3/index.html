@@ -1078,6 +1078,29 @@
 			</ul>
 		</ul>
 	</div>
+	
+	<div id="3.7 Fairness">
+		<h2>3.7 Fairness</h2>
+		<ul>
+			<li>今まで考慮してこなかったが、interleavingはschedulerによって管理される(ランダムではない)</li>
+			<ul>
+				<li>ただ、schedulerの仕組みは複雑でmodelに組み込みにくい</li>
+				<li>ここでは特定のschedulerに依存しないmodel化を行いたかった</li>
+				<li>デメリットとして、普通ではない実行状態(path)が現れてしまう</li>
+				<ul>
+					<li>1つのプロセスのみが常に実行される</li>
+					<li>starvation</li>
+				</ul>
+			</ul>
+			<li>Kripke structureに制約を加え、望まない振る舞いが起こらないようにする</li>
+			<ul>
+				<li>\(M = (S, S=0, R, \mathit{AP}, L, F)\)</li>
+				<ul>
+					<li>\(F \subseteq 2^S \): fairness constraint</li>
+				</ul>
+			</ul>
+		</ul>
+	</div>
 	<!-- <p><a href="https://prismjs.com/index.html">prism.js</a>を用いたinline code block highlight</p>
 	<pre>
 		<code class="language-py">
