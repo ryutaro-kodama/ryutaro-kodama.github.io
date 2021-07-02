@@ -16,12 +16,12 @@
             <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
               <div
                 style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
-                <font style="font-size: 16px">fork</font>
+                <font style="font-size: 16px">(fork)</font>
               </div>
             </div>
           </div>
         </foreignObject><text x="135" y="86" fill="#000000" font-family="Helvetica" font-size="12px"
-          text-anchor="middle">fork</text>
+          text-anchor="middle">(fork)</text>
       </switch>
     </g>
     <ellipse cx="55" cy="82" rx="15" ry="15" fill="#ffffff" stroke="#000000" pointer-events="all" />
@@ -52,12 +52,12 @@
             <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
               <div
                 style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
-                <font style="font-size: 16px">wait</font>
+                <font style="font-size: 16px">(wait)</font>
               </div>
             </div>
           </div>
         </foreignObject><text x="135" y="326" fill="#000000" font-family="Helvetica" font-size="12px"
-          text-anchor="middle">wait</text>
+          text-anchor="middle">(wait)</text>
       </switch>
     </g>
     <ellipse cx="55" cy="322" rx="15" ry="15" fill="#ffffff" stroke="#000000" pointer-events="all" />
@@ -168,12 +168,12 @@
             <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
               <div
                 style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
-                <font style="font-size: 16px">fork</font>
+                <font style="font-size: 16px">(fork)</font>
               </div>
             </div>
           </div>
         </foreignObject><text x="705" y="96" fill="#000000" font-family="Helvetica" font-size="12px"
-          text-anchor="middle">fork</text>
+          text-anchor="middle">(fork)</text>
       </switch>
     </g>
     <ellipse cx="625" cy="92" rx="15" ry="15" fill="#ffffff" stroke="#000000" pointer-events="all" />
@@ -204,12 +204,12 @@
             <div style="box-sizing: border-box; font-size: 0; text-align: center; ">
               <div
                 style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
-                <font style="font-size: 16px">wait</font>
+                <font style="font-size: 16px">(wait)</font>
               </div>
             </div>
           </div>
         </foreignObject><text x="705" y="336" fill="#000000" font-family="Helvetica" font-size="12px"
-          text-anchor="middle">wait</text>
+          text-anchor="middle">(wait)</text>
       </switch>
     </g>
     <ellipse cx="625" cy="332" rx="15" ry="15" fill="#ffffff" stroke="#000000" pointer-events="all" />

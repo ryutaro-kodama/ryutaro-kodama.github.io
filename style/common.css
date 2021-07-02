@@ -27,3 +27,8 @@ img, svg {
 	position: sticky;
 	top: 15px;
 }
+
+.quiz {
+	color: red;
+	font-weight: bold;
+}

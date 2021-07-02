@@ -155,13 +155,13 @@
                 style="display: inline-block; font-size: 18px; font-family: Helvetica; color: #000000; line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
                 <p>
                   <font face="Itim" data-font-src="https://fonts.googleapis.com/css?family=Itim"
-                    style="font-size: 20px">l'</font>
+                    style="font-size: 20px">l1</font>
                 </p>
               </div>
             </div>
           </div>
         </foreignObject><text x="539" y="35" fill="#000000" font-family="Helvetica" font-size="18px"
-          text-anchor="middle">l'</text>
+          text-anchor="middle">l1</text>
       </switch>
     </g>
   </g>

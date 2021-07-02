@@ -563,7 +563,7 @@
 		<ul>
 			<li>\(S_0\)を、\(v_0,v_1\)を使った論理式で表したい</li>
 			<ul>
-				<li>initial stateの\(v_0,v_1\)のペアを受け取った時だけ\(S_0(v_0,v_1)\)がtrueになるようにする</li>
+				<li>initial stateでの\(v_0,v_1\)のペアと同じ変数を受け取った時だけ、論理式(\(S_0(v_0,v_1)\))がtrueになるようにする</li>
 				<details>
 					<summary style="color: red; font-weight: bold;">\(S_0(v_0,v_1)=\)?</summary>
 					\(S_0(v_0,v_1) = \neg v_0 \land \neg v_1\)
@@ -640,7 +640,7 @@
 							<li>\(v'_2 = (v_0 \land v_1) \oplus v_2\)</li>
 						</ul>
 					</ul>
-					<p>このcircuitのtransit relationを論理式で表す</p>
+					<p>このcircuitのtransition relationを論理式で表す</p>
 					<ol>
 						<li>各relationを論理式で表す</li>
 						<ul>
@@ -745,12 +745,24 @@
 				<li>一般的なstatementに対するラベル付け変換を以下のように定義する</li>
 				<ul>
 					<li>\(P\)がcomposite statementでないとき(x:=e, skip, wait, lock, unlock, etc.)</li>
+					<ul>
+						<li>\(P^{\mathcal{L}} = P\)</li>
+					</ul>
 					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_uncomposite.svg" alt="">
 					<li>\(P\)がsequenceのとき(\(P_1;P_2\))</li>
+					<ul>
+						<li>\(P^{\mathcal{L}} = P^{\mathcal{L}}_1; l_1: P^{\mathcal{L}}_2\)</li>
+					</ul>
 					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_sequence.svg" alt="">
-					<li>\(P\)がifのとき(if \(b\) then \(P_1\) else \(P_2\) end if)</li>
+					<li>\(P\)がifのとき(\(\texttt{if} \; b \; \texttt{then} \; P_1 \; \texttt{else} \; P_2 \;  \texttt{end} \; \texttt{if}\))</li>
+					<ul>
+						<li>\(P^{\mathcal{L}} = \texttt{if} \; b \; \texttt{then} \; l_1:P^{\mathcal{L}}_1 \; \texttt{else} \; l_2:P^{\mathcal{L}}_2 \;  \texttt{end} \; \texttt{if}\)</li>
+					</ul>
 					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_if.svg" alt="">
-					<li>\(P\)がwhileのとき(while \(b\) do \(P_1\) end while)</li>
+					<li>\(P\)がwhileのとき(\(\texttt{while} \; b \; \texttt{do} \; P_1 \; \texttt{end} \; \texttt{while}\))</li>
+					<ul>
+						<li>\(P^{\mathcal{L}} = \texttt{while} \; b \; \texttt{do} \; l_1:P^{\mathcal{L}}_1 \; \texttt{end} \; \texttt{while}\))</li>
+					</ul>
 					<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/labeling_while.svg" alt="">
 				</ul>
 			</ul>
@@ -769,7 +781,7 @@
 			</ul>
 
 			<h4>translation procedureの定義</h4>
-			<p>translation procedure \(\mathcal{C}\)を考えていく</p>
+			<p>statement(program)を受け取って論理式を返すtranslation procedure \(\mathcal{C}\)を考えていく</p>
 			<ul>
 				<li>各遷移では、多くの変数に変化はないので、それを表す補助関数を導入する</li>
 				<ul>
@@ -777,7 +789,7 @@
 				</ul>
 				<li>まずはinitial stateを記述する</li>
 				<ul>
-					<li>\(S_0(V,\mathit{pc}) \equiv \mathit{pre}(V) \land \mathit{pc} = m\)</li>
+					<li>\(S_0(V,\mathit{pc}) \equiv \mathit{pre}(V) \land (\mathit{pc} = m)\)</li>
 					<ul>
 						<li>\(\mathit{pre}(V)\): プログラム\(P\)のinitial valueを表す条件式</li>
 						<li>\(m\): プログラム\(P\)のentry point</li>
@@ -858,10 +870,8 @@
 					</ul>
 					<li>exchanging messages: queueやある種のprotocolに基づいたやり取り</li>
 				</ul>
-				<ul>
-					<li>concurrent program: 並列に実行されるプロセスの集合</li>
-					<li>process: sequantialなstatement</li>
-				</ul>
+				<li>concurrent program: 並列に実行されるプロセスの集合</li>
+				<li>process: sequantialなstatement</li>
 			</ul>
 
 			<h4>シンボルの定義</h4>
@@ -880,7 +890,7 @@
 				</ul>
 			</ul>
 
-			<h4>concurrent programを論理式で表す</h4>
+			<h4>concurrent programを論理式で表すための準備</h4>
 			<ul>
 				<li>
 					concurrent program \(P\):
@@ -898,6 +908,10 @@
 						<li>プロセスの終了地点のprogram point: \(l'_i\)</li>
 					</ul>
 				</ul>
+			</ul>
+
+			<h4>concurrent programを論理式で表す</h4>
+			<ul>
 				<li>初期状態:</li>
 				<ul>
 					<li>\(\mathcal{S_0}(V,\mathit{PC}) \equiv \mathit{pre}(V) \land (\mathit{pc} = m) \land \bigwedge^n_{i=1}(\mathit{pc}_i = \texttt{susp})\)</li>
@@ -907,16 +921,16 @@
 				<ul>
 					<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_program.svg" alt="" width="500px"></li>
 					<li>
-						\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \) <br>
-						\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \) <br>
-						\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)
+						<span style="background-color: rgb(243, 195, 106);">\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \)</span> <br>
+						<span style="background-color: rgb(167, 221, 243);">\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \)</span> <br>
+						<span style="background-color: lightgreen;">\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)</span>
 					</li>
 					<ul>
-						<li>\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \)</li>
+						<li style="background-color: rgb(243, 195, 106);">\( (\mathit{pc} = l \land \mathit{pc'} = \texttt{susp} \land \mathit{pc'_1} = l_1 \land ... \land \mathit{pc'_n} = l_n) \)</li>
 						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_entry.svg" alt="" width="500px"></li>
-						<li>\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \)</li>
+						<li style="background-color: rgb(167, 221, 243);">\( \lor \bigwedge^n_{i=1}(\mathcal{C}(l_i, P_i, l'_i) \land \mathit{same}(V \setminus V_i) \land \mathit{same}(\mathit{PC} \setminus \{\mathit{pc_i}\}) ) \)</li>
 						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_body.svg" alt="" width="400px"></li>
-						<li>\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)</li>
+						<li style="background-color: lightgreen;">\( \lor (\mathit{pc} = \texttt{susp} \land \mathit{pc'} = l' \land \mathit{pc_1} = l'_1 \land ... \land \mathit{pc_n} = l'_n \land \bigwedge^n_{i=1}(\mathit{pc'_i = \texttt{susp}}))\)</li>
 						<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/concurrent_exit.svg" alt="" width="600px"></li>
 					</ul>
 				</ul>
@@ -1049,12 +1063,21 @@
 							</div>
 						</div>
 					</li>
-					<li>initial state: \(x = 1 \land y = 1\)</li>
+					<li>initial state: \(x = 1 \land y = 2\)</li>
 					<li>複数の実行結果を考えることができる</li>
 					<ul>
-						<li>\(\alpha \beta\): \(x = 3 \land y = 5\)</li>
-						<li>\(\beta \alpha\): \(x = 4 \land y = 3\)</li>
-						<li>\(\alpha_0 \beta_0 \alpha_1 \beta_1 \alpha_2 \beta_2\): \(x = 3 \land y = 3\)</li>
+						<details>
+							<summary class="quiz">\(\alpha \beta\): </summary>
+							\(x = 3 \land y = 5\)
+						</details>
+						<details>
+							<summary class="quiz">\(\beta \alpha\): </summary>
+							\(x = 4 \land y = 3\)
+						</details>
+						<details>
+							<summary class="quiz">\(\alpha_0 \beta_0 \alpha_1 \beta_1 \alpha_2 \beta_2\): </summary>
+							\(x = 3 \land y = 3\)
+						</details>
 					</ul>
 					<li>\(x=3 \land y=3\)にならないことを確認したい</li>
 					<ul>
