@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2021-07-27</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(7/27)</h1>
+
+	<h2>解析の明確化</h2>
+	<div>
+		<div class="flex">
+			<div class="flex-left">
+				<p>抽象的定義</p>
+				<ul>
+					<li>\(\texttt{Value} = \texttt{Type}\)</li>
+					<ul>
+						<li>\(\texttt{Type} = \texttt{PrimType} \cup \texttt{ObjType}\)</li>
+						<ul>
+							<li>\(\texttt{ObjType} = L\)</li>
+						</ul>
+					</ul>
+					<li>\(\texttt{State} = {\cal P}(\texttt{Binding}) \times {\cal P}(\texttt{ExectionContext}) \)</li>
+					<ul>
+						<li>\(\texttt{Binding} = T \rightarrow {\cal P}(\texttt{Value})\)</li>
+						<li>\(\texttt{ExectionContext} = L*\)</li>
+					</ul>
+					<li>\(\texttt{ForwardAnalysis} = \texttt{Program} \rightarrow {\cal P}((\texttt{BasicBlock} \times \texttt{ExectionContext}) \rightarrow \texttt{State})\)</li>
+				</ul>
+				<p>右のコードで当てはめると</p>
+				<div>
+					\begin{alignat*}{1}
+						\mathit{State1} = ( &\{ a \mapsto \{{\rm INT, STR}\}, b \mapsto \{{\rm INT, STR}\}, \\
+																& \quad func \mapsto \{\mathit{sample.py@}1\} \; \}, \\
+																&\{ \} ) \\
+						\mathit{State2} = ( &\{ i \mapsto \{{\rm INT}\}, x \mapsto \{{\rm INT, STR}\}, y \mapsto \{{\rm INT}\}, \\
+																& \quad func \mapsto \{\mathit{sample.py@}1\} \; \}, \\
+																&\{ \mathit{sample.py@}14 \} ) \\
+						\mathit{ForwardAnalysis} \mathit{(Program)} &= \{(\mathit{BB_{sample.py@exit}}, \bot) \rightarrow \mathit{State1}, \\
+																												& \qquad (\mathit{BB_{func@12}}, \mathit{sample.py@}14) \rightarrow \mathit{State2},...\}
+					\end{alignat*}
+				</div>
+				<p>抽象的定義その２</p>
+				<ul>
+					<li>
+							\( \texttt{BackwardAnalysis} = (\texttt{Program} \times {\cal P}(\texttt{State})) \)
+								\( \qquad\qquad \rightarrow {\cal P}((\texttt{BasicBlock} \times \texttt{ExectionContext}) \rightarrow \texttt{RefinedState}) \)
+					</li>
+					<ul>
+						<li>\(\texttt{RefinedState} = {\cal P}(\texttt{RefinedBinding}) \times {\cal P}(\texttt{ExectionContext}) \)</li>
+						<ul>
+							<li>\(\texttt{RefinedBinding} = T \rightarrow {\cal P}(\texttt{Value} \times \texttt{PathConstraint})\)</li>
+						</ul>
+					</ul>
+				</ul>
+				<p>右のコードで当てはめると</p>
+				<div>
+					\begin{alignat*}{1}
+						\mathit{RefinedState2} = ( &\{ i \mapsto \{{\rm (INT, \top)} \}, x \mapsto \{{\rm (INT, \top)}\}, y \mapsto \{{\rm (INT, \top)}\}, \\
+																			 &\quad func \mapsto \{\mathit{sample.py@}1\} \; \}, \\
+																			 &\{ \mathit{sample.py@}14 \} ) \\
+						\mathit{BackwardAnalysis} \mathit{(Program, States)} &= \{(\mathit{BB_{sample.py@exit}}, \bot) \rightarrow \mathit{RefinedState1}, \\
+																												& \qquad (\mathit{BB_{func@12}}, \mathit{sample.py@}14) \rightarrow \mathit{RefinedState2},...\}
+					\end{alignat*}
+				</div>
+			</div>
+			<div class="flex-right">
+				<div class="sticky">
+					<p>sample.py</p>
+					<pre><code class="language-py line-numbers">
+	def func(i):
+		if i == 0:
+			x = 10
+			y = 0
+		else:
+			x = "OK"
+			y = 1
+
+		if y == 0:
+			x = x * 2
+
+		return x
+
+	a = func(0)
+	b = func(1)
+
+	assert isinstance(a, int)
+	assert isinstance(b, str)
+					</code></pre>
+				</div>
+			</div>
+		</div>
+	</div>
+
+  <h2>TODO</h2>
+	<ul>
+		<li>アルゴリズム等</li>
+		<ul>
+			<li>「解析に時間がかかるパターン」を拡張する</li>
+			<li>forwardからbackwardへ追加で送る情報について考える</li>
+			<li>backward 解析をSSA instructionベースで行うか、TAJS nodeベースで行うか？</li>
+		</ul>
+		<li>論文等</li>
+		<ul>
+			<li>「型同士の関係に関する制約」の具体例を考える</li>
+			<li><s>Ariadneを用いた効果について論文に追記する</s></li>
+			<li>SSAに変換する効果について論文に追記する</li>
+			<li><s>TAJSを用いる効果について論文に追記する</s></li>
+			<ul>
+				<li>コードベースの具体例を考える</li>
+			</ul>
+		</ul>
+		<li>実装</li>
+		<ul>
+			<li>forward</li>
+			<ul>
+				<li>TAJS版</li>
+				<ul>
+					<li>(CFGから)各命令をnodeに変換、つなげる(VFG作成)[2]</li>
+					<ul>
+						<li><s>50%</s>→<s>90%</s></li>
+					</ul>
+					<li>状態を保存するデータ構造の作成[4]</li>
+					<li>node単位でtransfer functionを作成[4]</li>
+					<li>data-flow algorithmに基づき、型解析[1]</li>
+					<li style="color: darkgrey;">worklist algorithmを使って高速化</li>
+					<li style="color: darkgrey;">def-use chainを作成</li>
+				</ul>
+				<li>卒論版</li>
+				<ul>
+					<li>(CFGから)命令単位でtransfer functionを作成[3]</li>
+					<li>transfer functionにしたがって型解析を行う[1]</li>
+				</ul>
+			</ul>
+			<li>backward</li>
+			<ul>
+				<li>制約を入れるデータ構造の作成[2]</li>
+				<li>node単位でtransfer functionを作成[3]</li>
+				<li>SMT solverで制約を解く[1]</li>
+			</ul>
+		</ul>
+	</ul>
+
+</body>
+
+</html>
