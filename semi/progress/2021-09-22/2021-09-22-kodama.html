@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2021-09-22</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(8/30)</h1>
+
+	<h2>概要</h2>
+	<ul>
+		<li>Pythonコードの正確な型解析</li>
+		<li>forwardとbackwardの組み合わせで行う</li>
+		<ul>
+			<li>forward解析</li>
+			<ul>
+				<li>型の候補を絞り込む</li>
+				<li>TAJSの手法を用いることで、ある程度の正確性を目指す</li>
+			</ul>
+			<li>backward解析</li>
+			<ul>
+				<li>実行パスを考慮することで、その型が正しいかをチェックする</li>
+				<li>これによりpath-sensitivityを得る</li>
+			</ul>
+		</ul>
+	</ul>
+
+	<h2>夏休みのタスク</h2>
+	<ul>
+		<li>1. TAJSベースのforward型解析の実装(90~95%)</li>
+		<ul>
+			<li>2. Static Type Analysis by Abstract Interpretation of Python Programs(ECOOP 2020)の検体を含む上記実装のリアル検体実験</li>
+		</ul>
+		<li>3. Thresherベースのbackward型解析の実装(80%)</li>
+		<ul>
+			<li>(4. 上記2つの実装の組み合わせに対してのリアル検体実験)</li>
+		</ul>
+	</ul>
+
+	<div id="TAJSベースのforward型解析の実装">
+		<h2>TAJSベースのforward型解析の実装</h2>
+		<p>TAJSでの解析手法(解析のドメイン)に基づきつつ、Ariadne(Python版WALA)上で実装</p>
+		<p>解析の大まかな手順</p>
+		<ul>
+			<li>プログラムをTAJSで定義されたノードから構成されるflow graphに変換</li>
+			<li>解析のlatticeの定義</li>
+			<li>Iteration algorithm(cf. Dragon book)に基づき、Fix pointに到達させる</li>
+		</ul>
+
+		<div id="プログラムをTAJSで定義されたノードから構成されるflow graphに変換">
+			<h3>プログラムをTAJSで定義されたノードから構成されるflow graphに変換</h3>
+			<img src="convert.svg" alt="" width="1000px">
+			<ul>
+				<li>Ariadneを使用するメリット</li>
+				<ul>
+					<li>CFGの作成(Basic blockの切り分け)</li>
+					<li>SSA形式への変換</li>
+					<li>定数の展開</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="解析のlatticeの定義">
+			<h3>解析のlatticeの定義</h3>
+			<p>flow-sensitiveかつcontext-sensitiveな解析を行いたい</p>
+			<div class="flex">
+				<div class="flex-left">
+					<ul>
+						<li>状態はプログラムポイント(Basic block)とその地点までの実行コンテキストで区別する</li>
+						<ul>
+							<li>\((\texttt{BasicBlock} \times \texttt{ExectionContext}) \rightarrow \texttt{State}\)</li>
+							<ul>
+								<li>ex.) \((\mathit{BB0} \times <\mathit{BB1}>) = \{ \mathit{i} = 10, ... \} \)</li>
+								<li>ex.) \((\mathit{BB0} \times <\mathit{BB2}>) = \{ \mathit{i} = \texttt{"OK"}, ... \} \)</li>
+							</ul>
+						</ul>
+						<li>Stateは「基本的には」変数からAbstract valueへの対応関係</li>
+						<ul>
+							<li>\(T \rightarrow {\cal P}(\texttt{Value})\)</li>
+							<details>
+								<summary></summary>
+								<ul>
+									<li>\(\texttt{State} = \texttt{Binding} \times {\cal P}(\texttt{ExectionContext}) \)</li>
+									<li>\(\texttt{Binding} = \texttt{Env}*\)</li>
+									<li>\(\texttt{Env} = {\cal P}(T \rightarrow {\cal P}(\texttt{Value}))\)</li>
+								</ul>
+							</details>
+						</ul>
+						<li>Abstract valueは、primitive型とobject型のタプルで表す</li>
+						<ul>
+							<li>\( \texttt{Value} = \texttt{Undef} \times \texttt{Null} \times \texttt{Bool} \times \texttt{Int} \times \texttt{Float} \times \texttt{String} \times {\cal P}(\texttt{Obj}) \)</li>
+							<ul>
+								<li>タプルの各要素は、具体的な値をできるだけ記録する</li>
+								<li><img src="bool_lattice.png" alt="" width="150px"><img src="str_lattice.png" alt="" width="220px"></li>
+								<li>Python(やJS)はリスト等の要素の型が固定ではなく、できるだけelement sensitiveに行いたいため</li>
+							</ul>
+							<li>ex.) 
+								\begin{eqnarray*}
+									(\mathit{BB3} \times < - >) = \{ \mathit{i} & = & (\bot, \bot, \bot, 10, \bot, \bot, \{\}) \\
+											\mathit{x} & = & (\bot, \bot, \bot, 0, \bot, \texttt{"OK"}, \{\}) \\
+											\mathit{y} & = & (\bot, \bot, \bot, \top, \bot, \bot, \{\})
+								\end{eqnarray*}
+							</li>
+						</ul>
+					</ul>
+				</div>
+				<div class="flex-right">
+					<div class="sticky">
+						<div>
+							<pre><code class="language-py line-numbers">
+# BB0
+def id(i):
+	return x
+
+# BB1
+id(10)
+
+# BB2
+id("OK")
+							</code></pre>
+						</div>
+						<div id="language-py line-numbers">
+							<pre><code class="language-py line-numbers">
+# BB0
+i = 10
+
+if i == 5:
+	# BB1
+	x = 0
+	y = 0
+else:
+	# BB2
+	x = "OK"
+	y = 1
+
+# BB3
+print(x)
+							</code></pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<h3>Iteration algorithmに基づき、Fix pointに到達させる</h3>
+			<ul>
+				<li>Flow graphのノードごとにTransfer functionを作成し、状態を変化させていく</li>
+				<li>ex.) <img src="node-write-example.png" alt=""></li>
+			</ul>
+			<ul>
+				<li>Fix point到達の判定</li>
+				<ul>
+					<li>(あるコンテキスト中で、)1つのflow graphの全ての状態の変化がなくなったとき</li>
+				</ul>
+			</ul>
+
+			<h4>補足</h4>
+			<details>
+				<summary>inter-procedural部分の解析方法</summary>
+				<img src="forward_inter_procedural.svg" alt="" width=800px">
+			</details>
+			<details>
+				<summary>loop部分の解析方法</summary>
+				<p>解析のプロセスが粗すぎるので、改善したい</p>
+				<img src="forward_loop.svg" alt="" width="1100px">
+			</details>
+		</div>
+	</div>
+		
+	<div id="上記実装のリアル検体実験">
+		<h2>上記実装のリアル検体実験</h2>
+		<ul>
+			<li>目的</li>
+			<ul>
+				<li>TAJSの提案手法のままでは上手くいかないPythonの特徴・コードパターンを調査する</li>
+				<ul>
+					<li>実験できた検体数が少なく、この目標は未達成</li>
+				</ul>
+			</ul>
+		</ul>
+		<table border="1" align="center" style="text-align: center;">
+			<thead>
+				<th>name</th>
+				<th>LOC</th>
+				<th>解析時間(提案手法)</th>
+				<th>解析時間(ECCOP 2020)</th>
+				<th>検体詳細</th>
+				<th>検体特徴</th>
+			</thead>
+			<tbody>
+				<tr>
+					<td>isinstance.py</td>
+					<td>3</td>
+					<td>901 ms</td>
+					<td>40 ms</td>
+					<td>合成検体</td>
+					<td>builtin関数</td>
+				</tr>
+				<tr>
+					<td>mutation.py</td>
+					<td>12</td>
+					<td>976 ms</td>
+					<td>34 ms</td>
+					<td>合成検体</td>
+					<td>__init__関数, attrの動的作成</td>
+				</tr>
+				<tr>
+					<td>disjoint_sets.py</td>
+					<td>45</td>
+					<td>1268 ms</td>
+					<td>59 ms</td>
+					<td>Typpeteのunit test</td>
+					<td>ループ, 再帰</td>
+				</tr>
+				<tr>
+					<td>functions.py</td>
+					<td>58</td>
+					<td>*</td>
+					<td>39 ms</td>
+					<td>Typpeteのunit test</td>
+					<td>リスト, 辞書</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div id="Thresherベースのbackward型解析の実装">
+		<h2>Thresherベースのbackward型解析の実装</h2>
+		<div class="flex">
+			<div class="flex-left">
+				<div class="sticky">
+					<ul>
+						<li>(Thresherの)backward解析で行いたいこと</li>
+						<ul>
+							<li><span style="border-bottom: solid 1px #FF3333;">特定のプログラムポイントへの実行パス(witness)が存在するかの確認</span></li>
+						</ul>
+						<li><span style="border-bottom: solid 1px #00CC00;">変数ごとにuseから生まれる制約(=その変数が満たさなければならない制約・条件)を集める</span></li>
+						<ul>
+							<li><span style="border-bottom: solid 1px #007FFF;">defされた値が、その制約を満たすかの確認を行う</span></li>
+						</ul>
+					</ul>
+				</div>
+			</div>
+			<div  class="flex-right">
+				<img src="backward_example1.svg" alt="" width="400px">
+				<img src="backward_example2.svg" alt="" width="450px">
+			</div>
+		</div>
+
+		<h3>backward解析の手順</h3>
+		<ol>
+			<li>初期条件を仮定(ex. BB3で変数xは10に等しい)</li>
+			<li>各変数について、useの制約を集めていく</li>
+			<li>defの地点で、初期条件を含むuse制約を満たすか確認</li>
+		</ol>
+
+		<h3>実装上の不都合</h3>
+		<ul>
+			<li>制約のSAT判定にz3を使用</li>
+			<ul>
+				<li>z3は型が決まっている前提</li>
+				<li><code class="language-py">i == j</code>という制約がいきなり出てきた場合、どの型の値が等しいのかわからない</li>
+				<ul>
+					<li>
+						\begin{eqnarray*}
+							(and \; (& = & \quad i\_INT \quad j\_INT) \\
+							        (& = & \quad i\_STR \quad j\_STR) \\
+											(& = & \quad i\_BOOL \quad j\_BOOL) \\
+											(& = & \quad i\_FLOAT \quad j\_FLOAT) )
+						\end{eqnarray*}
+					</li>
+					<li>
+						<details>
+							<summary>ちなみに...</summary>
+							<p>その後<code class="language-py">i = 0</code>のようなdefがあった場合、Solverに渡すのは</p>
+							<ul>
+								<li>卒論版</li>
+								<ul>
+									<li>
+										\begin{eqnarray*}
+											(and \; (and \; (& = & \quad i\_INT \quad j\_INT) \\
+													      	    (& = & \quad i\_STR \quad j\_STR) \\
+															        (& = & \quad i\_BOOL \quad j\_BOOL) \\
+															        (& = & \quad i\_FLOAT \quad j\_FLOAT) \\
+													(= \quad & i\_INT & \quad 0) )
+										\end{eqnarray*}
+									</li>
+								</ul>
+								<li>現在</li>
+								<ul>
+									<li>
+										\begin{eqnarray*}
+											(and \; (& = & \quad i\_INT \quad j\_INT) \\
+															(& = & \quad i\_INT \quad 0) )
+										\end{eqnarray*}
+									</li>
+								</ul>
+							</ul>
+						</details>
+					</li>
+				</ul>
+			</ul>
+			<li>ループについては未着手</li>
+		</ul>
+	</div>
+
+	<div>
+		<h2>今後の予定</h2>
+		<ul>
+			<li>異なる型同士での合法な演算の定義</li>
+			<li>対応可能検体の拡張</li>
+			<li>WALA上でのloopの扱い方の調査</li>
+		</ul>
+	</div>
+</body>
+
+</html>
