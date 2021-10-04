@@ -15,7 +15,7 @@
 <body>
   <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
 
-  <h1>進捗報告(8/30)</h1>
+  <h1>進捗報告(9/22)</h1>
 
 	<h2>概要</h2>
 	<ul>
@@ -32,6 +32,19 @@
 				<li>実行パスを考慮することで、その型が正しいかをチェックする</li>
 				<li>これによりpath-sensitivityを得る</li>
 			</ul>
+		</ul>
+	</ul>
+
+	<h2>Motivating example</h2>
+	<ul>
+		<li>大雑把な視点</li>
+		<ul>
+			<li>pyreやTAJSではpath-sensitiveな型解析ができない</li>
+		</ul>
+		<li>詳細な視点(ユースケース)</li>
+		<ul>
+			<li>まだできていない</li>
+			<li>TAJSの再現実装を通して、TAJS等で上手くいかない例を集めようとしている</li>
 		</ul>
 	</ul>
 
@@ -108,7 +121,7 @@
 								\begin{eqnarray*}
 									(\mathit{BB3} \times < - >) = \{ \mathit{i} & = & (\bot, \bot, \bot, 10, \bot, \bot, \{\}) \\
 											\mathit{x} & = & (\bot, \bot, \bot, 0, \bot, \texttt{"OK"}, \{\}) \\
-											\mathit{y} & = & (\bot, \bot, \bot, \top, \bot, \bot, \{\})
+											\mathit{y} & = & (\bot, \bot, \bot, \top, \bot, \bot, \{\}) \}
 								\end{eqnarray*}
 							</li>
 						</ul>
@@ -156,7 +169,16 @@ print(x)
 			<h3>Iteration algorithmに基づき、Fix pointに到達させる</h3>
 			<ul>
 				<li>Flow graphのノードごとにTransfer functionを作成し、状態を変化させていく</li>
-				<li>ex.) <img src="node-write-example.png" alt=""></li>
+				<!-- <li>ex.) <img src="node-write-example.png" alt=""></li> -->
+				<li>ex.) <code class="language-py">i = j</code>というstatement
+					\begin{eqnarray*}
+						IN = \{ \mathit{j} & = & (\bot, \bot, \bot, 10, \bot, \bot, \{\}) \}
+					\end{eqnarray*}
+					\begin{eqnarray*}
+						OUT = \{ \mathit{i} & = & (\bot, \bot, \bot, 10, \bot, \bot, \{\}) \\
+								\mathit{j} & = & (\bot, \bot, \bot, 10, \bot, \bot, \{\}) \}
+					\end{eqnarray*}
+				</li>
 			</ul>
 			<ul>
 				<li>Fix point到達の判定</li>
@@ -265,6 +287,7 @@ print(x)
 			<li>defの地点で、初期条件を含むuse制約を満たすか確認</li>
 		</ol>
 
+		<!--
 		<h3>実装上の不都合</h3>
 		<ul>
 			<li>制約のSAT判定にz3を使用</li>
@@ -314,15 +337,27 @@ print(x)
 			<li>ループについては未着手</li>
 		</ul>
 	</div>
+	-->
 
 	<div>
 		<h2>今後の予定</h2>
 		<ul>
-			<li>異なる型同士での合法な演算の定義</li>
-			<li>対応可能検体の拡張</li>
-			<li>WALA上でのloopの扱い方の調査</li>
+			<li>9月中</li>
+			<ul>
+				<li>異なる型同士での合法な演算の定義</li>
+			</ul>
+			<li>10月中旬まで</li>
+			<ul>
+				<li>対応可能検体の拡張</li>
+			</ul>
+			<li>並行してloopの扱いの実装</li>
+			<ul>
+				<li>WALA上でのloopの扱い方の調査</li>
+				<li>具体例ベースでbackward解析のloop前後の制約の変化を考える</li>
+			</ul>
 		</ul>
 	</div>
+
 </body>
 
 </html>
