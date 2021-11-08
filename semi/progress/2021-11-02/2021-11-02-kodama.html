@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2021-11-02</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(11/02)</h1>
+
+	<h2>概要</h2>
+	<ul>
+		<li>Pythonコードの正確な型解析</li>
+		<li>forwardとbackwardの組み合わせで行う</li>
+		<ul>
+			<li>forward解析</li>
+			<ul>
+				<li>型の候補を絞り込む</li>
+				<li>TAJSの手法を用いることで、ある程度の正確性を目指す</li>
+			</ul>
+			<li>backward解析</li>
+			<ul>
+				<li>実行パスを考慮することで、その型が正しいかをチェックする</li>
+				<li>これによりpath-sensitivityを得る</li>
+			</ul>
+		</ul>
+	</ul>
+
+	<h2>Motivating Example</h2>
+	<div>
+		<pre><code class="language-py line-numbers">
+# mypy/stubgenc.py
+
+def generate_c_function_stub(..., sigs = None, ...) -> None:
+	if sigs is None:
+		sigs = {}
+
+	...
+
+	sigs.get('name')    # FP: NoneType doesn't has attribute 'get'.
+		</code></pre>
+	</div>
+	<ul>
+		<li>「デフォルト引数でNoneを与えて、Noneであったときに新しいオブジェクトを作成」というコードパターンは結構ある</li>
+		<li>TAJSやPyreでは(保守的に解析するなら)、9行目でFPが検出されてしまう(ハズ)</li>
+		<ul>
+			<li>sigs引数に値が渡されなかったコンテキスト(sigs=None)の下で、if文の合流地点でのsigs変数はNone or Dict</li>
+			<li>これは実際の実行パスの観点からはFP</li>
+		</ul>
+	</ul>
+	<!-- <ul>
+		<li>backwardを使う利点を示せてはいない</li>
+		<ul>
+			<li>forwardに比べて探索パス数が少なくなるような例を見つけたい</li>
+		</ul>
+	</ul> -->
+
+	<div id="今週やったこと">
+		<h2>今週やったこと</h2>
+		<ul>
+			<li>リファクタリング</li>
+			<ul>
+				<li>objectのクラスの構造を変更</li>
+			</ul>
+			<li>検体拡張</li>
+			<ul>
+				<li><s>3~4個</s> 1個</li>
+			</ul>
+			<li>論文読み</li>
+			<ul>
+				<li>SCCOP 2020</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="標準ライブラリの扱い">
+		<h2>標準ライブラリの扱い</h2>
+		<ul>
+			<li>要件</li>
+			<ul>
+				<li>標準ライブラリの呼び出しに対し、返り値の型を知りたい</li>
+			</ul>
+		</ul>
+
+		<h3>typeshedを使おうかと</h3>
+		<ul>
+			<li>https://github.com/python/typeshed</li>
+			<li>python.org主導の、標準ライブラリ関数の引数と返り値に型アノテーションをつけたもの</li>
+			<li>pyre, SCCOP 2020全てが標準ライブラリの解析に利用</li>
+		</ul>
+		<ul>
+			<li>残念なところ: 解析の粒度が落ちる</li>
+			<ul>
+				<li>(forward解析のabstract valueのlatticeのノードはリテラルが入るため)</li>
+			</ul>
+		</ul>
+
+		<h3>問題点: (JAVA用の)parserがない</h3>
+		<ul>
+			<li>parserを作るとしたら</li>
+			<ul>
+				<li><s>フルスクラッチ</s></li>
+				<li>.pyiファイル -> python標準ライブラリのastモジュールでASTへparse -> JSON -> Javaで読み込み</li>
+				<ul>
+					<li>ほぼ確でできる</li>
+				</ul>
+				<li>.pyiファイル -> Ariadneで使用されている構文解析器(Antlr)でASTへparse -> Javaで読み込み</li>
+				<ul>
+					<li>.pyiファイルをAntlrが解析できるかは未確認</li>
+				</ul>
+			</ul>
+		</ul>
+
+		<h3></h3>
+	</div>
+
+	<div>
+		<h2>今後の予定</h2>
+		<ul>
+			<li>実装</li>
+			<ul>
+				<li><strong>typeshedパーサーの実装</strong></li>
+				<li><strong>対応可能検体の拡張</strong>(1~2個)</li>
+			</ul>
+			<li>並行してloopの扱いの実装</li>
+			<ul>
+				<li>WALA上でのloopの扱い方の調査</li>
+				<ul>
+					<li>ドキュメントを検索</li>
+				</ul>
+				<li>具体例ベースでbackward解析のloop前後の制約の変化を考える</li>
+			</ul>
+			<li>読む論文</li>
+			<ul>
+				<li><strong>Type Analysis by Abstract Interpretation of Python Programs(SCCOP 2020)</strong></li>
+				<ul>
+					<li>現状の解析器がどこまで解析できるのか調査</li>
+				</ul>
+				<li>Determinacy in Static Analysis for jQuery(OOPSLA 2014)</li>
+				<ul>
+					<li>TAJSの派生研究でよく引用されている論文</li>
+				</ul>
+				<li>PyCG: Practical Call Graph Generation in Python</li>
+				<ul>
+					<li>Pythonのinter proceduralな静的解析の最新論文</li>
+					<li>(春休みに読んだが覚えていない)</li>
+				</ul>
+				<li>Static Value Analysis of Python Programs by Abstract Interpretation</li>
+				<ul>
+					<li>SCCOPの前論文</li>
+				</ul>
+			</ul>
+			<li>SUPAの復習</li>
+		</ul>
+	</div>
+
+</body>
+
+</html>
