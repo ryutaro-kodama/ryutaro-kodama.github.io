@@ -32,3 +32,31 @@ img, svg {
 	color: red;
 	font-weight: bold;
 }
+
+.checkmark000{
+	padding-left:24px;
+	position:relative;
+}
+.checkmark000:before,
+.checkmark000:after{
+	content:"";
+	display:block;
+	position:absolute;
+}
+.checkmark000:before{
+	width:16px;
+	height:16px;
+	background:#ffffff;
+    	border:1px solid #000000;
+	left:0;top:2px;
+}
+.checkmark000:after{
+	border-left:2px solid #ff0000;
+	border-bottom:2px solid #ff0000;
+	width:6px;
+	height:3px;
+	-webkit-transform:rotate(-45deg);
+	transform:rotate(-45deg);
+	left:5px;
+	top:7px;
+}
