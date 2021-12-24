@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+  <h1>PyCG[ICSE '21]</h1>
+  Practical Call Graph Generation in Python
+
+  <h2>概要</h2>
+  <ul>
+    <li>背景</li>
+    <ul>
+      <li>(そもそも)Pythonプログラムに対するcall graph生成器は少ない</li>
+      <ul>
+        <li>動的型付け言語としてのPythonの特徴が解析を難しくさせる</li>
+      </ul>
+      <li>既存の解析器は以下の部分が解析ができない</li>
+      <ul>
+        <li>(一部の)手続き間(inter-procedural)</li>
+        <li>関数をオブジェクトとして扱う</li>
+      </ul>
+    </ul>
+    <li>提案手法</li>
+    <ul>
+      <li>以下の2つのステップで解析を行う</li>
+      <ol>
+        <li>assignment graphを作成</li>
+        <li>assignment graphを使って、calleeの関数が何であるかを解決しながらcall graphを作成</li>
+      </ol>
+    </ul>
+    <li>実験結果</li>
+    <ul>
+      <li>Presicion: ~99.2%</li>
+      <li>Recall: ~69.9%</li>
+      <li>1000行のコードに対し、0.38秒の解析時間</li>
+    </ul>
+  </ul>
+
+  <h2>背景</h2>
+  <h3>Challenges</h3>
+  <ul>
+    <li>Pythonプログラムに対して、call graphを作成する(≒静的解析を行う)うえで大変なこと</li>
+    <ul>
+      <li>高階関数</li>
+      <ul>
+        <li>関数オブジェクトは変数へ代入可能</li>
+      </ul>
+      <li>関数内関数</li>
+      <li>class</li>
+      <ul>
+        <li>多重継承</li>
+      </ul>
+      <li>module</li>
+      <li>動的な特徴: </li>
+      <ul>
+        <li>変数の型が変わる</li>
+        <li>クラス構造を変更可能</li>
+        <li><code class="language-py">eval()</code></li>
+      </ul>
+      <li>Duck Typing</li>
+    </ul>
+  </ul>
+
+  <h3>既存手法の問題点</h3>
+  <div class="flex">
+    <div class="flex-left">
+      <p>右のサンプルコードに対し、既存の手法の不正確さを確認</p>
+      <img src="motivating-example_correct.png" alt="" width="450px">
+
+      <h4>Pyan</h4>
+      <p>Pyan3: Offline call graph generator for Python 3</p>
+      <img src="motivating-example_pyan.png" alt="" width="400px">
+      <ul>
+        <li><code class="language-py">__init__</code>とは別に、class名へもedgeを張ってしまう</li>
+        <li>importしているmoduleへも、edgeを張ってしまう</li>
+        <li>inter-proceduralな解析ができない</li>
+        <ul>
+          <li><code class="language-py">apply</code>関数内で呼ばれている関数を解析できない</li>
+        </ul>
+      </ul>
+
+      <h4>Depends</h4>
+      <p>Depends is a fast, comprehensive code dependency analysis tool</p>
+      <img src="motivating-example_depends.png" alt="" width="200px">
+      <ul>
+        <li><code class="language-py">__init__</code>を捕捉できない</li>
+        <li>inter-proceduralな解析ができない</li>
+      </ul>
+    </div>
+    <div class="flex-right">
+      <div class="sticky">
+        <p>module name: crypto</p>
+        <pre><code class="language-py">
+import cryptops
+
+class Crypto:
+  def __init__(self, key):
+    self.key = key
+
+  def apply(self, msg, func):
+    return func(self.key, msg)
+
+crp = Crypto("secretkey")
+encrypted = crp.apply("hello world", cryptops.encrypt)
+decrypted = crp.apply(encrypted, cryptops.decrypt)
+        </code></pre>
+      </div>
+    </div>
+  </div>
+
+  <h2>提案手法</h2>
+  <ul>
+    <li>入力と出力</li>
+    <ul>
+      <li>入力: Pythonプログラム</li>
+      <li>出力: call graph</li>
+    </ul>
+    <li>以下の2つのステップで解析を行う</li>
+    <ol>
+      <li>assignment graphを作成</li>
+      <li>assignment graphを使って、calleeの関数が何であるかを解決しながらcall graphを作成</li>
+    </ol>
+    <li>関数をオブジェクトとして扱うため、assignment graphが重要な役割を果たす</li>
+  </ul>
+
+  <h3>attributeの扱い</h3>
+  <p>解析をするうえで大切なのが、attributeの扱い</p>
+  <div class="flex">
+    <div class="flex-left">
+      <ul>
+        <li>既存手法</li>
+        <ul>
+          <li>"field-based approach"</li>
+          <li><code class="language-py">func()</code>という識別子のみに注目</li>
+          <li>どのクラス(Namespace)の<code class="language-py">func()</code>かは分からない</li>
+        </ul>
+        <li>PyCG</li>
+        <ul>
+          <li><code class="language-py">A.func()</code>, <code class="language-py">B.func()</code>というように、分けて認識</li>
+        </ul>
+      </ul>
+    </div>
+    <div class="flex-right">
+      <div class="sticky">
+        <pre><code class="language-py">
+class A:
+  def func():
+    pass
+
+class B:
+  def func():
+    pass
+
+a = A()
+b = B()
+a.func()
+b.func()
+        </code></pre>
+      </div>
+    </div>
+  </div>
+
+  <h3>assignment graphを作成</h3>
+  <p>assinment graphの構築は、以下のルールに基づきつつ、fixed-point algorithmを使って行う</p>
+  <p>以下の点を見ていく</p>
+  <ol>
+    <li>syntaxの定義</li>
+    <li>assinment graph解析(構築)のstateの定義</li>
+    <li>assinment graph解析のルール(≒transfer function)の定義</li>
+  </ol>
+
+  <h4>1. syntaxの定義</h4>
+  <div>
+    <div>
+      \begin{eqnarray*}
+        e \in \mathit{Expr} & ::= &
+          o | x | x:=e | \mathbf{function} \; x(y...) \; e | \mathbf{return} \; e | e(x=e...) | \\
+          && \mathbf{class} \; x(y...) \; e | e.x | e.x := e | \mathbf{new} \; x \; (y=e...) | \\
+          && \mathbf{import} \; x \; \mathbf{from} \; m \; \mathbf{as} \; y | \mathbf{iter} \; x | e;e \\
+        o \in \mathit{Obj} & ::= & (n, v) \\
+        v \in \mathit{Definition} & ::= & (x, \tau) \\
+        \tau \in \mathit{IdentType} & ::= & \mathbf{func} | \mathbf{var} | \mathbf{cls} | \mathbf{mod} \\
+        n \in \mathit{Namespace} & ::= & (v)* \\
+        x, y \in \mathit{Identifier} & ::= & \mathit{is \; the \; set \; of \; program \; identifiers} \\
+        m \in \mathit{Modules} & ::= & \mathit{is \; the \; set \; of \; modules} \\
+        E & ::= & [] | x := E | \mathbf{return} \; E | E(x=e...) | o(x=E...) | \\
+          && \mathbf{new} \; x(y=E) | E.x | E.x := e | o.x := E | \mathbf{iter} \; o | E;e | o;E \\
+      \end{eqnarray*}
+    </div>
+    <ul>
+      <li>\(\tau \in \mathit{IdentType} ::= \mathbf{func} | \mathbf{var} | \mathbf{cls} | \mathbf{mod}\)</li>
+      <ul>
+        <li>識別子は4種類に分けられる</li>
+      </ul>
+      <li>\( v \in \mathit{Definition} ::= \; (x, \tau) \in \mathit{Identifier} \times \mathit{IdentType} \)</li>
+      <ul>
+        <li>各識別子はこのペアで区別する</li>
+      </ul>
+      <li>\(o \in \mathit{Obj} ::= (n, v) \in \mathit{Namespace} \times \mathit{Definition}\)</li>
+      <ul>
+        <li>Objectは、NamespaceとDifinitionで定義</li>
+        <div class="flex">
+          <div class="flex-left">
+            <li>右図の例</li>
+            <ul>
+              <li><code class="language-py">var</code>@1: [(main, mod)]</li>
+              <li><code class="language-py">var</code>@3: [(main, mod), (A, cls)]</li>
+            </ul>
+          </div>
+          <div class="flex-right">
+            <pre><code class="language-py line-numbers">
+var = 10
+class A:
+  var = 10
+            </code></pre>
+          </div>
+        </li>
+      </ul>
+    </ul>
+  </div>
+  <ul>
+    <li>細かい話</li>
+    <ul>
+      <!-- <li>generatorの場合、lambda関数でラップする</li>
+      <ul>
+        <li><code class="language-py">gen = lazy_call(x)</code> -> <code class="language-py">gen = lambda: lazy_call(x)</code></li>
+      </ul> -->
+      <li>dictionaryやlistは、一般的なオブジェクトとして扱う</li>
+      <ul>
+        <li><code class="language-py">x["key"]</code> -> <code class="language-py">x.key</code></li>
+      </ul>
+    </ul>
+  </ul>
+
+  <h4>2. assinment graph解析(構築)のstateの定義</h4>
+  <div>
+    <div>
+      \begin{eqnarray*}
+      s \in \mathit{Scope} & = & \mathit{Definition} \hookrightarrow \cal{P}(\mathit{Definition}) \\
+      h \in \mathit{ClassHier} & = & \mathit{Obj} \hookrightarrow \mathit{Obj}* \\
+      \pi \in \mathit{AssignG} & = & \mathit{Obj} \hookrightarrow \cal{P}(\mathit{Obj}) \\
+        \sigma \in \mathit{State} & = & \mathit{AssignG} \times \mathit{Scope} \times \mathit{Namespace} \times \mathit{ClassHier} \\
+      \end{eqnarray*}
+    </div>
+    
+    <h5>Scope</h5>
+    <div>
+      <ul>
+        <li>\(s \in \mathit{Scope} = \mathit{Definition} \hookrightarrow \cal{P}(\mathit{Definition})\)</li>
+        <li>difinitionの視認(visible)関係を表す木構造</li>
+        <ul>
+          <li>node: Definition</li>
+          <li>edge: 親子関係</li>
+        </ul>
+        <li>closureや関数内関数を扱うことができるようになる</li>
+      </ul>
+      <div class="flex">
+        <div class="flex-left">
+          <p>module name: crypto</p>
+          <pre><code class="language-py">
+import cryptops
+
+class Crypto:
+  def __init__(self, key):
+    self.key = key
+
+  def apply(self, msg, func):
+    return func(self.key, msg)
+
+crp = Crypto("secretkey")
+encrypted = crp.apply(
+  "hello world", cryptops.encrypt)
+decrypted = crp.apply(
+  encrypted, cryptops.decrypt)
+          </code></pre>
+        </div>
+        <div class="flex-right">
+          <img src="scope.svg" alt="" width="500px">
+          <img src="usage_guide.svg" alt="" width="90px">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5>Class Hierarchy</h5>
+  <div>
+    <ul>
+      <li>\(h \in \mathit{ClassHier} = \mathit{Obj} \hookrightarrow \mathit{Obj}*\)</li>
+      <li>クラスの継承関係を表す</li>
+      <li>
+        <img src="class_hierarchy.svg" alt="" width="270px">
+      </li>
+      <li>多重継承等も扱うことができるようになる</li>
+    </ul>
+  </div>
+
+  <h5>Assignment Graph</h5>
+  <div>
+    <ul>
+      <li>\(\pi \in \mathit{AssignG} = \mathit{Obj} \hookrightarrow \cal{P}(\mathit{Obj})\)</li>
+      <li>オブジェクト同士の代入関係を表すグラフ構造</li>
+      <ul>
+        <li>node: Object = (\(\mathit{Namespace, Identifier}\))</li>
+        <li>edge: そのオブジェクトが持ち得る(指し得る)オブジェクト</li>
+      </ul>
+    </ul>
+    <div class="flex">
+      <div class="flex-left">
+        <div class="sticky">
+          <p>module name: crypto</p>
+          <pre><code class="language-py">
+import cryptops
+
+class Crypto:
+def __init__(self, key):
+  self.key = key
+
+def apply(self, msg, func):
+  return func(self.key, msg)
+
+crp = Crypto("secretkey")
+encrypted = crp.apply(
+  "hello world", cryptops.encrypt)
+decrypted = crp.apply(
+  encrypted, cryptops.decrypt)
+          </code></pre>
+        </div>
+      </div>
+      <div class="flex-right">
+        <img src="assignment_graph.svg" alt="" width="400px">
+        <img src="assignment_graph-question1.svg" alt="" width="200px">
+        <details>
+          <summary class="quiz">Q. (crypto.Crypto.apply, msg)に代入されるオブジェクトは？</summary>
+          <img src="assignment_graph-question2.svg" alt="" width="400px">
+        </details>
+        <details>
+          <summary class="quiz">Q. (crypto, decrypted), (crypto, decrypted)に代入されるオブジェクトは？</summary>
+          <img src="assignment_graph-question3.svg" alt="" width="400px">
+        </details>
+        <details>
+          <summary class="quiz">Q. (crypto.Crypto.apply, < virt-ret >)に代入されるオブジェクトは？</summary>
+          <img src="assignment_graph-question4.svg" alt="" width="400px">
+        </details>
+        <img src="usage_guide.svg" alt="" width="90px">
+      </div>
+    </div>
+  </div>
+
+  <h4>3. assinment graph解析のルールの定義</h4>
+  <div id="3. assinment graph解析のルールの定義">
+    <p>
+      2. で定義したstateを、各expressionのsemanticsに基づいて変化させる<br>
+      ルールは以下の形を取る
+      \begin{eqnarray*}
+        \langle \pi, s, n, h, E[e] \rangle \rightarrow \langle \pi', s', n', h', E[e'] \rangle
+      \end{eqnarray*}
+    </p>
+
+    <ul>
+      <li>E-CTX</li>
+      <li>COMPOUND</li>
+      <li>IDENT</li>
+      <li>ASSIGN</li>
+      <ul>
+        <li>
+          \(\displaystyle \frac{
+            s'=\texttt{addScope}(s,n,x,\mathbf{var}) \quad
+            o'=(n,(x,\mathbf{var})) \quad
+            \pi'=\pi[o' \rightarrow \pi(o') \cup \{o\}]
+          }{
+            \langle \pi, s, n, h, E[x:=o] \rangle \rightarrow \langle \pi', s', n, h, E[o'] \rangle
+          } \)
+        </li>
+        <details>
+          <li>\( s'=\texttt{addScope}(s,n,x,\mathbf{var}) \) : scope treeに変数\(x\)(左辺値)のidentifierを追加</li>
+          <li>\(o'=(n,(x,\mathbf{var}))\) : オブジェクト\(o'\)とはnamespace \(n\)で変数\(x\)が指すオブジェクト</li>
+          <li>\( \pi'=\pi[o' \leftarrow \pi(o') \cup \{o\}] \) : \(o'\)が元々指していたオブジェクト(\(\pi(o')\))と\(o\)の両方を指す</li>
+          <details>
+            <summary class="quiz">Q. これは「〇〇〇〇 update」</summary>
+            <strong>Weak update</strong>
+          </details>
+        </details>
+      </ul>
+      <li>FUNC</li>
+      <ul>
+        <li>
+          \(\displaystyle \frac{
+            s'=\texttt{addScope}(s,n,x,\mathbf{func}) \quad
+            s''=\texttt{addScope}(s',n',\texttt{ret},\mathbf{var}) \quad
+            s'''=\texttt{addScope}(s'',n',y,\mathbf{var})
+          }{
+            \langle \pi, s, n, h, E[\mathbf{function} \; x \; (y...) \; e] \rangle \rightarrow \langle \pi', s''', n', h, E[e] \rangle
+          } \)
+        </li>
+        <details>
+          <li>\( s'=\texttt{addScope}(s,n,x,\mathbf{func}) \) : scope treeに現在のnamespaceで関数xを追加</li>
+          <li>\( n'=n \cdot (x,\mathbf{func}) \) : 新規namespaceの作成</li>
+          <li>\( s''=\texttt{addScope}(s',n',\texttt{ret},\mathbf{var}) \) : scope treeに関数内namespaceで仮想変数\(\texttt{ret}\)を追加</li>
+          <li>\( s'''=\texttt{addScope}(s'',n',y,\mathbf{var}) \) : scope treeに関数内namespaceで仮引数\(y\)を追加</li>
+        </details>
+      </ul>
+      <li>CALL</li>
+      <ul>
+        <li>
+          \(\displaystyle \frac{
+            o_1=(n',(f,\mathbf{func})) \quad
+            o_2'=(n' \cdot f,(y,\mathbf{var})) \quad
+            \pi'=\pi[o_2' \rightarrow \pi(o_2') \cup \{o_2\}]
+          }{
+            \langle \pi, s, n, h, E[o_1(y=o_2...)] \rangle \rightarrow \langle \pi', s, n, h, (n' \cdot f,(\texttt{ret},\mathbf{var})) \rangle
+          } \)
+        </li>
+        <details>
+          <li>\( \pi'=\pi[o_2' \rightarrow \pi(o_2') \cup \{o_2\} \) : 仮引数\(y\)に対応するオブジェクトを上書き</li>
+        </details>
+      </ul>
+      <li>RETURN</li>
+      <ul>
+        <li>
+          \(\displaystyle \frac{
+            o'=(n \cdot x,(\texttt{ret},\mathbf{var})) \quad
+            \pi'=\pi[o' \rightarrow \pi(o') \cup \{o\}]
+          }{
+            \langle \pi, s, n \cdot x, h, E[\mathbf{return} \; o] \rangle \rightarrow \langle \pi', s, n, h, E[o']) \rangle
+          } \)
+        </li>
+        <details>
+          <li>return valueに対応するオブジェクトを上書き</li>
+        </details>
+      </ul>
+      <li>CLASS</li>
+      <ul>
+        <li>
+          \(\displaystyle \frac{
+            s'=\texttt{addScope}(s,n,x,\mathbf{cls}) \quad
+            t= \langle \texttt{getObject}(s,n,b) | b \in (y...) \rangle \quad
+            h' = h[(n,(x,\mathbf{cls})) \rightarrow t] \quad
+            n'=n \cdot (x,\mathbf{cls})
+          }{
+            \langle \pi, s, n, h, E[\mathbf{class} \; x \; (y...) \; e] \rangle \rightarrow \langle \pi, s', n', h', E[e] \rangle
+          } \)
+        </li>
+        <details>
+          <li>\( t= \langle \texttt{getObject}(s,n,b) | b \in (y...) \rangle \) : 親クラスの識別子\(b\)に対応するobjectを全て取得</li>
+          <li>\( h' = h[(n,(x,\mathbf{cls})) \rightarrow t] \) : class hierarchyを更新</li>
+        </details>
+      </ul>
+      <li>ATTR</li>
+      <li>NEW</li>
+      <li>ATTR_ASSIGN</li>
+      <li>IMPORT</li>
+      <li>ITER-ITERABLE</li>
+      <li>ITER-GENERATOR</li>
+    </ul>
+  </div>
+
+  <h3>assignment graphを使ってcall graphを作成</h3>
+  <div id="assignment graphを使ってcall graphを作成">
+    <p>
+      Call graphは以下の形で定義
+      \begin{eqnarray*}
+        \mathit{cg} \in \mathit{CallGraph} = \mathit{Obj} \hookrightarrow \cal{P}(\mathit{Obj})
+      \end{eqnarray*}
+    </p>
+
+    <h4>CG構築アルゴリズム</h4>
+    <div id="CG構築アルゴリズム">
+      <ul>
+        <li>input</li>
+        <ul>
+          <li>\(p \in \mathit{Program}\)</li>
+          <li>\(\sigma \in \mathit{State} \quad\) (assignment graphの最終形)</li>
+        </ul>
+        <li>output</li>
+        <ul>
+          <li>\(\mathit{cg} \in \mathit{CallGraph}\)</li>
+        </ul>
+      </ul>
+      <div>
+        \begin{eqnarray*}
+          && \mathbf{foreach} \; e \; \mathbf{in} \; \mathit{Program} \; \mathbf{do} \\
+          && \qquad \mathbf{while} \; e \notin \mathit{Obj} \; \mathbf{do} \\
+          && \qquad\qquad \langle \sigma,E[e] \rangle \rightarrow \langle \sigma', E[e'] \rangle
+            \quad \mathit{\color{blue}{// Ex.) \; Change \; The \; Namespace}} \\
+          && \qquad\qquad \mathbf{if} \; e' == o_1(y = o_2...) \; \mathbf{then}
+            \quad \mathit{\color{blue}{// Call \; Expression}} \\
+          && \qquad\qquad\qquad (\pi,s,n\cdot f,h) \leftarrow \sigma' \\
+          && \qquad\qquad\qquad c \leftarrow \texttt{getReachableFuns}(\pi, o_1)\
+            \quad \mathit{\color{blue}{// Get \; Callee}} \\
+          && \qquad\qquad\qquad o_3 \leftarrow \texttt{getObject}(s,n,f) \\
+          && \qquad\qquad\qquad \mathit{cg} \leftarrow \mathit{cg}[o_3 \rightarrow \mathit{cg}(o_3) \cup c]
+            \quad \mathit{\color{blue}{// Add \; Call \; Edges}} \\
+          && \qquad\qquad \mathbf{end} \\
+          && \qquad\qquad e \leftarrow e' \\
+          && \qquad \mathbf{end} \\
+          && \mathbf{end} \\
+          && \mathbf{return} \; \texttt{cg} \\
+        \end{eqnarray*}
+      </div>
+    </div>
+  </div>
+
+  <h2>Discussion & Limitations</h2>
+  <div id="Discussion & Limitations">
+    <ul>
+      <li>条件分岐とloopは無視</li>
+      <ul>
+        <li>実験によって、速い速度で、あまり精度を落とさないことが示されている</li>
+      </ul>
+      <li>dick typingへの対応</li>
+      <ul>
+        <li>namespaceによってattribute accessを判別することで、精度の向上を行う</li>
+      </ul>
+      <li>そのほかのPythonの特徴への対応</li>
+      <ul>
+        <li><code class="language-py">eval</code>は無視</li>
+        <li>built-in型やbuilt-in関数等の情報は使っていない</li>
+        <ul>
+          <li>例えば、<code class="language-py">list.append()</code>を解決できない</li>
+        </ul>
+        <li>ソースコードが手に入るmoduleしか解析できない</li>
+      </ul>
+    </ul>
+  </div>
+
+  <h2>実験・評価</h2>
+  <div id="実験・評価">
+
+    <h3>Research question</h3>
+    <div id="Research question">
+      <ol>
+        <li>提案手法はPythonプログラムに対してのcall graph構築に有用か</li>
+        <li>提案手法は既存手法と比較してどうか</li>
+        <li>提案手法の速度はどうか</li>
+      </ol>
+    </div>
+
+    <h3>ベンチマークについて</h3>
+    <div id="ベンチマークについて">
+      <ul>
+        <li>2種類のベンチマークを使用</li>
+        <ul>
+          <li>Micro-benchmark Suite</li>
+          <ul>
+            <li>言語の特徴を広くとらえた合成検体</li>
+            <li>計112個</li>
+            <li><img src="micro-benchmark.png" alt=""></li>
+            <!-- <li>
+              <details>
+                <summary>Micro-benchmarkの種類の表</summary>
+
+              </details>
+            </li> -->
+            <li>1つの実行パスしか持たない</li>
+            <ul>
+              <li>条件分岐やloopがない</li>
+            </ul>
+          </ul>
+          <li>Macro-benchmark Suite</li>
+          <ul>
+            <li>リアル検体</li>
+            <li>Githubのstar順にPython repositoryを並べ、3,500行以下のコードを選択</li>
+            <ul>
+              <li>行数を制限したのは、正解セットを手作業で作る際のヒューマンエラーを少なくしたかったため</li>
+            </ul>
+            <li><img src="macro-benchmark.png" alt=""></li>
+          </ul>
+        </ul>
+        <li>Micro-benchmarkの正当性の証明</li>  
+        <ul>
+          <li>2人のベテランPython developerに以下の質問を10段階で評価してもらい、Micro-benchmarkの品質を評価</li>
+          <ol>
+            <li>Completeness: Pythonの特徴を全てとらえているか</li>
+            <li>Code Quality: testはuniqueで最小か</li>
+            <li>Description Quality: 表のdescriptionはテストの特徴を適切に表現しているか</li>
+          </ol>
+          <li>結果</li>
+          <ul>
+            <li>1人目: 全てに9.7の評価</li>
+            <li>2人目: Completenessには6, Description Qualityには10の評価</li>
+            <li>「built-in関数やgeneratorに関するテストが抜けている」</li>
+          </ul>
+        </ul>
+      </ul>
+    </div>
+
+    <h3>Micro-benchmarkの結果</h3>
+    <div id="Micro-benchmarkの結果">
+      <ul>
+        <li><img src="micro-benchmark_result.png" alt=""></li>
+        <li>FPの原因: Pythonの特徴を全て捉えていないため(ex. starred assignments)</li>
+      </ul>
+    </div>
+
+    <h3>Macro-benchmarkの結果</h3>
+    <div id="Macro-benchmarkの結果">
+      <ul>
+        <li><img src="macro-benchmark_result.png" alt=""></li>
+        <li>(Pyanの-はクラッシュ)</li>
+        <li>PyCGが100%までいかないのは先に述べたLimitationが原因</li>
+        <li>Pyanは<code class="language-py">__init__</code>を捕捉できない等があるため、precision, recall共に低い</li>
+        <li>Dependsはconservativeに解析を行うため、Precisionは高いが、Recallは低い</li>
+      </ul>
+    </div>
+
+    <h3>Time and Memory Performance</h3>
+    <div id="Micro-benchmarkの結果">
+      <ul>
+        <li>UNIX timeコマンドを使用して時間を計測</li>
+        <li>UNIX pmapコマンドを使用してメモリ消費量を計測</li>
+        <li>20回の実行の平均値</li>
+        <li><img src="performance_result.png" alt=""></li>
+        <li>時間消費量</li>
+        <ul>
+          <li>PyanはASTを2回しか走査しない</li>
+          <li>PyCGはfix point iterationを使用しているため遅い</li>
+          <li>Dependsはsourceファイルのparseに多くの時間がかかる</li>
+        </ul>
+        <li>メモリ消費量</li>
+        <ul>
+          <li>PyanやDependsは内部のデータ構造の情報がより少ないため、消費量が少ない</li>
+        </ul>
+      </ul>
+    </div>
+
+    <h3>Case study</h3>
+    <div id="Case study">
+      <p>
+        Githubは脆弱性のあるライブラリへの依存関係があると警告をしてくれる<br>
+        ただしこの警告は、脆弱性のある関数を呼び出したかどうかまでは分からない<br>
+        そこでPyCGを使うことで、CGを構築し、実際に呼び出しているものを特定することができる
+      </p>
+    </div>
+
+  </div>
+
+  <h2>関連研究</h2>
+  <div id="関連研究">
+    <table border="1">
+      <thead>
+        <tr>
+          <th>名前</th>
+          <th>静的or動的</th>
+          <th>対象言語</th>
+          <th>手法</th>
+          <th>精度</th>
+          <th>sensitivity</th>
+          <th>速度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>T.Xie, D.Notkin[CSE '11]</td>
+          <td>動的</td>
+          <td>Java</td>
+          <td>-</td>
+          <td>高</td>
+          <td>-</td>
+          <td>遅</td>
+        </tr>
+        <tr>
+          <td>S.Fin, J.Dolby(WALA)['12]</td>
+          <td>静的</td>
+          <td>Java/JS</td>
+          <td>pointer解析</td>
+          <td>低</td>
+          <td>flow & context</td>
+          <td>速</td>
+        </tr>
+        <tr>
+          <td>A.Feldthaus(ACG)[ICSE '13]</td>
+          <td>静的</td>
+          <td>JS</td>
+          <td>flow</td>
+          <td>中</td>
+          <td>flow & context</td>
+          <td>速</td>
+        </tr>
+        <tr>
+          <td>S.H.Jensen(TAJS)[ISAS '13]</td>
+          <td>静的</td>
+          <td>JS</td>
+          <td>type</td>
+          <td>中</td>
+          <td>flow & context</td>
+          <td>速</td>
+        </tr>
+        <tr>
+          <td>Github hser gak(pycallgraph)['14]</td>
+          <td>動的</td>
+          <td>Python</td>
+          <td>-</td>
+          <td>中</td>
+          <td>-</td>
+          <td>遅</td>
+        </tr>
+        <tr>
+          <td>D.Fraser(Pyan)['14]</td>
+          <td>静的</td>
+          <td>Python</td>
+          <td>-</td>
+          <td>低</td>
+          <td>-</td>
+          <td>速</td>
+        </tr>
+        <tr>
+          <td>V.Salis(PyCG)[ICSE '20]</td>
+          <td>静的</td>
+          <td>Python</td>
+          <td>value-flow</td>
+          <td>中*</td>
+          <td>-</td>
+          <td>速</td>
+        </tr>
+        <tr>
+          <td>提案手法</td>
+          <td>静的</td>
+          <td>Python</td>
+          <td>type</td>
+          <td>高</td>
+          <td>flow & context & path</td>
+          <td>？</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <h2>まとめ</h2>
+  <div id=まとめ>
+    <ul>
+      <li>assignment graphを使用したCG解析手法の提案</li>
+      <li>precision/recall共に既存手法より高い精度を記録</li>
+      <li>Micro-benchmarkは将来の他の手法にとっても有用</li>
+    </ul>
+  </div>
+
+  <h2>提案手法との関連</h2>
+  <div id="提案手法との関連">
+    <ul>
+      <li>攻めどころ: PyCGはflow-insensitive & context-insensitive</li>
+      <li>速度はPyCGを基準に、どれだけ近づけられるか</li>
+      <li>benchmarkは評価に採用</li>
+      <ul>
+        <li>ただしsingle pathなので、拡充する必要がある</li>
+      </ul>
+    </ul>
+  </div>
+</body>
+
+</html>
+
