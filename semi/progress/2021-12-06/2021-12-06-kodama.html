@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2021-12-06</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(12/06)</h1>
+
+	<h2>概要</h2>
+	<ul>
+		<li>Pythonコードの正確な型解析</li>
+		<li>forwardとbackwardの組み合わせで行う</li>
+		<ul>
+			<li>forward解析</li>
+			<ul>
+				<li>型の候補を絞り込む</li>
+				<li>TAJSの手法を用いることで、ある程度の正確性を目指す</li>
+			</ul>
+			<li>backward解析</li>
+			<ul>
+				<li>実行パスを考慮することで、その型が正しいかをチェックする</li>
+				<li>これによりpath-sensitivityを得る</li>
+			</ul>
+		</ul>
+	</ul>
+
+	<h2>Motivating Example</h2>
+	<div>
+		<pre><code class="language-py line-numbers">
+# mypy/stubgenc.py
+
+def generate_c_function_stub(..., sigs = None, ...) -> None:
+	if sigs is None:
+		sigs = {}
+
+	...
+
+	sigs.get('name')    # FP: NoneType doesn't has attribute 'get'.
+		</code></pre>
+	</div>
+	<ul>
+		<li>「デフォルト引数でNoneを与えて、Noneであったときに新しいオブジェクトを作成」というコードパターンは結構ある</li>
+		<li>TAJSやPyreでは(保守的に解析するなら)、9行目でFPが検出されてしまう(ハズ)</li>
+		<ul>
+			<li>sigs引数に値が渡されなかったコンテキスト(sigs=None)の下で、if文の合流地点でのsigs変数はNone or Dict</li>
+			<li>これは実際の実行パスの観点からはFP</li>
+		</ul>
+	</ul>
+	<!-- <ul>
+		<li>backwardを使う利点を示せてはいない</li>
+		<ul>
+			<li>forwardに比べて探索パス数が少なくなるような例を見つけたい</li>
+		</ul>
+	</ul> -->
+
+	<div id="今週やったこと">
+		<h2>今週やったこと</h2>
+		<ul>
+			<li>Ariadneのポインタ解析が変</li>
+		</ul>
+	</div>
+
+	<div id="Ariadneのポインタ解析が変">
+		<h2>Ariadneのポインタ解析が変</h2>
+		<div class="flex">
+			<div class="flex-left">
+				<p>
+					これを解析しようとしたらエラーが起きた(解析がクラッシュした)<br>
+					恐らくpointer解析が変なのではないかと考えている
+				</p>
+		
+				<h3>直接的なクラッシュ要因</h3>
+				<ul>
+					<li>関数呼び出し時</li>
+					<ul>
+						<li>Ariadneの事前解析結果を用い、calleeに対応するcall graph nodeを取得</li>
+						<li>そのnodeに保持されているcontrol flow graphを取り出して、callee側の解析を行っている</li>
+					</ul>
+					<li>callee: <code class="language-py line-numbers">func</code>に対応するcall graph nodeが存在しなかった</li>
+					<ul>
+						<li>client側の問題ではなく、Ariadne側の問題そう...</li>
+					</ul>
+				</ul>
+
+				<h3>call graphの構築が上手くいっていない</h3>
+				<ul>
+					<li>WALA(Ariadne)の解析手順</li>
+					<ul>
+						<li>全module(関数)を、未最適化のCFGへ変換</li>
+						<li>entry pointからdata-flow解析を行い、SSA&call graph作成</li>
+						<ul>
+							<li>未最適化のCFGは存在</li>
+							<li>SSA化されたCFG(& call graph node)が存在しない</li>
+						</ul>
+					</ul>
+					<li>CG構築のdata-flow analysisで上手くいってなさそう</li>
+				</ul>
+			</div>
+			<div class="flex-right">
+				<div class="sticky">
+					<p>解析対象のコード</p>
+					<pre><code class="language-py line-numbers">
+class Point(object):
+	def func(self, data):
+		self.data = data
+
+n = 5
+l = [0,0,0,0,0]
+
+for i in range(n):
+	l[i] = Point()
+for p in l:
+	p.func()
+					</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<div class="flex">
+			<div class="flex-left" style="width:2000px;">
+				<h3>ポインタ解析は上手くいっているのか</h3>
+				<ul>
+					<li>変数番号274番が指すオブジェクトはEMPTY</li>
+					<ul>
+						<li>上手くいっていない</li>
+					</ul>
+				</ul>
+
+				<h3>原因</h3>
+				<ul>
+					<li>根本的な原因は<code class="language-py">range</code>関数</li>
+					<li>pointer analysisはmodule毎に行われている</li>
+					<ul>
+						<li>global -> range -> Point</li>
+					</ul>
+					<li>1iter目では、255(<code class="language-py">range</code>関数の返り値を受け取る変数)が指すオブジェクトが何を指すか分からない</li>
+					<ul>
+						<li>range関数が解析されて、初めて分かる</li>
+						<li>その際に、255が指すオブジェクトが変化した場合に、その影響を受ける全てのstatementがworklistに加えられる必要がある</li>
+						<ul>
+							<li>この追加処理が上手くいってなさそう</li>
+						</ul>
+					</ul>
+					<li>ex.)261は255に依存</li>
+					<ul>
+						<li>pointerの更新処理を行うには、「255と261が指すものがどちらもEMPTYではない」という条件文がある</li>
+						<ul>
+							<li><code class="language-py">AstSSAPropagetionCallGraphBuilder.java</code>の1000行目</li>
+						</ul>
+						<li>元々globalを解析時には255がEMPTY -> 261もEMPTYを指していた</li>
+						<ul>
+							<li>上記条件文に弾かれて、伝搬が行われない</li>
+						</ul>
+					</ul>
+					<li>この挙動が仕様(解析を諦めている)なのか、バグなのか不明</li>
+					<ul>
+						<li>(恐らく、range関数がEMPTYを返すのが原因じゃないかなぁ...)</li>
+					</ul>
+				</ul>
+			</div>
+			<div class="flex-right">
+				<div class="sticky">
+					<img src="wala_ir.png" alt="" width="450px">
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<h3>解決案</h3>
+		<ul>
+			<li>call graph nodeが無かった場合に、未SSA形式のCFGを探し出し、SSACFGを作って解析</li>
+			<ul>
+				<li><strong style="color: rgb(5, 221, 5);">+</strong>:client側で解決可能</li>
+				<li><strong style="color: red;">-</strong>:その場しのぎ感</li>
+			</ul>
+			<li>pointer解析時に、call命令の対象がrange関数の場合に、何かしらのリストを返すように変更</li>
+			<ul>
+				<li><strong style="color: rgb(5, 221, 5);">+</strong>:一番、原因の本質を解決していそう</li>
+				<li><strong style="color: red;">-</strong>:Ariadne内部を弄らないといけない</li>
+			</ul>
+			<li>range関数が返すオブジェクトが分かった場合に、伝搬が上手くいくように、if文の条件を書き換え</li>
+			<ul>
+				<li><strong style="color: rgb(5, 221, 5);">+</strong>:「動く」という点では一番動きそう</li>
+				<li><strong style="color: red;">-</strong>:WALA内部を弄らないといけない</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div>
+		<h2>今後の予定</h2>
+		<ul>
+			<li>実装</li>
+			<ul>
+				<li><strong>typeshedパーサーの実装(90%済)</strong></li>
+				<li><strong>対応可能検体の拡張</strong>(1~2個)</li>
+			</ul>
+			<li>並行してloopの扱いの実装</li>
+			<ul>
+				<li>WALA上でのloopの扱い方の調査</li>
+				<ul>
+					<li>ドキュメントを検索</li>
+				</ul>
+				<li>具体例ベースでbackward解析のloop前後の制約の変化を考える</li>
+			</ul>
+			<li>読む論文</li>
+			<ul>
+				<li><strong>WALAについての論文</strong></li>
+				<ul>
+					<li><a href="http://wala.sourceforge.net/wiki/index.php/Publications" target="_blank">どれを読めば...</a></li>
+				</ul>
+				<li>
+					<details>
+						<summary>
+							<span class="checkmark">Type Analysis by Abstract Interpretation of Python Programs(SCCOP 2020)</span>
+						</summary>
+						<ul>
+							<li>現状の解析器がどこまで解析できるのか調査</li>
+						</ul>
+					</details>
+				</li>
+				<li><strong>Determinacy in Static Analysis for jQuery(OOPSLA 2014)</strong></li>
+				<ul>
+					<li>TAJSの派生研究でよく引用されている論文</li>
+				</ul>
+				<li>
+					<details>
+						<summary>
+							<span class="checkmark">PyCG: Practical Call Graph Generation in Python</span>
+						</summary>
+						<ul>
+							<li>Pythonのinter proceduralな静的解析の最新論文</li>
+							<li>(春休みに読んだが覚えていない)</li>
+							<li>修論研究の一番の対抗論文</li>
+						</ul>
+					</details>
+				</li>
+				<li>Static Value Analysis of Python Programs by Abstract Interpretation</li>
+				<ul>
+					<li>SCCOPの前論文</li>
+				</ul>
+			</ul>
+		</ul>
+	</div>
+
+</body>
+
+</html>
