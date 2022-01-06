@@ -13,7 +13,7 @@
 
 <body>
   <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
-  <h1>PyCG[ICSE '21]</h1>
+  <h1>PyCG[ICSE '20]</h1>
   Practical Call Graph Generation in Python
 
   <h2>概要</h2>
@@ -229,6 +229,36 @@ class A:
     </ul>
   </div>
   <ul>
+    <li>Evaluation Context</li>
+    <ul style="color: blue;">
+      <li>sub-expressionが評価される順番を表す</li>
+      <li>ex.)<code class="language-py">E.x = e</code> vs <code class="language-py">o.x = E</code></li>
+      <ul>
+        <li><code class="language-py">E.x = e</code>: 現在<code class="language-py">x</code>のreceiverを評価中</li>
+        <li><code class="language-py">o.x = E</code>: 現在右辺値を評価中(receiverはオブジェクト<code class="language-py">o</code>だと評価済み)</li>
+      </ul>
+      <li>Pythonプログラムを解析する上で評価順序が大切か？</li>
+      <ul>
+        <li>(式の評価順序は決まっている(cf. <a href="https://stackoverflow.com/questions/46288616/is-pythons-order-of-evaluation-of-function-arguments-and-operands-deterministic">Is Python's order of evaluation of function arguments and operands deterministic (+ where is it documented)?</a>))</li>
+        <li>
+          無理矢理な例:
+          <pre><code class="language-py line-numbers">
+def id(a):
+  return a
+
+def side_effect():
+  global id
+  id = None
+  return "OK"
+
+id(side_effect())
+          </code></pre>
+        </li>
+      </ul>
+    </ul>
+    <li></li>
+  </ul>
+  <ul>
     <li>細かい話</li>
     <ul>
       <!-- <li>generatorの場合、lambda関数でラップする</li>
@@ -238,6 +268,13 @@ class A:
       <li>dictionaryやlistは、一般的なオブジェクトとして扱う</li>
       <ul>
         <li><code class="language-py">x["key"]</code> -> <code class="language-py">x.key</code></li>
+        <div style="color: blue;">
+          <li>メリット: リストや辞書をオブジェクトと同様に扱うことができる</li>
+          <li>デメリット: FP, FNにつながる (ex. <code class="language-py">d.keys(); d["keys"] = None; d.keys();</code>)</li>
+          <ul>
+            <li>ただし本研究は<code class="language-py">d.keys()</code>のような、特別なbuilt-in型のmethod callを解析できないためこの方法が許容される(と思う...)</li>
+          </ul>  
+        </div>
       </ul>
     </ul>
   </ul>
@@ -262,7 +299,29 @@ class A:
           <li>node: Definition</li>
           <li>edge: 親子関係</li>
         </ul>
-        <li>closureや関数内関数を扱うことができるようになる</li>
+        <li><s>closureや関数内関数を扱うことができるようになる</s></li>
+        <li>closureや関数内関数で使用される(外側で定義された)変数がどこで定義されたものか判別できるようになる</li>
+        <ul>
+          <li>
+            <div class="flex">
+              <div class="flex-left">
+                <pre><code class="language-py">
+def func():
+  x = 3
+  def add3(y):
+    return y+x
+  return add3
+
+z = func()
+z(5)  # 8
+                </code></pre>
+              </div>
+              <div class="flex-right">
+                <img src="scope_closure.svg" alt="" width="130px">
+              </div>
+            </div>
+          </li>
+        </ul>
       </ul>
       <div class="flex">
         <div class="flex-left">
