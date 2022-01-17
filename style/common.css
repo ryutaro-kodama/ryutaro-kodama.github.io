@@ -60,3 +60,14 @@ img, svg {
 	left:5px;
 	top:7px;
 }
+
+/* 関連研究の星取り表用 */
+.ref-ok{
+	background-color: #09e409;
+}
+.ref-so{
+	background-color: #efff00c4;
+}
+.ref-ng{
+	background-color: #ff0000b8;
+}
