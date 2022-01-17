@@ -246,12 +246,15 @@ class A:
 def id(a):
   return a
 
+def return_id():
+  return id
+
 def side_effect():
   global id
   id = None
   return "OK"
 
-id(side_effect())
+return_id()(side_effect())
           </code></pre>
         </li>
       </ul>
@@ -300,7 +303,7 @@ id(side_effect())
           <li>edge: 親子関係</li>
         </ul>
         <li><s>closureや関数内関数を扱うことができるようになる</s></li>
-        <li>closureや関数内関数で使用される(外側で定義された)変数がどこで定義されたものか判別できるようになる</li>
+        <li style="color: blue;">closureや関数内関数で使用される(外側で定義された)変数がどこで定義されたものか判別できるようになる</li>
         <ul>
           <li>
             <div class="flex">
@@ -550,7 +553,7 @@ decrypted = crp.apply(
           && \mathbf{foreach} \; e \; \mathbf{in} \; \mathit{Program} \; \mathbf{do} \\
           && \qquad \mathbf{while} \; e \notin \mathit{Obj} \; \mathbf{do} \\
           && \qquad\qquad \langle \sigma,E[e] \rangle \rightarrow \langle \sigma', E[e'] \rangle
-            \quad \mathit{\color{blue}{// Ex.) \; Change \; The \; Namespace}} \\
+            \quad \mathit{\color{blue}{// expressionを再帰的に探索}} \\
           && \qquad\qquad \mathbf{if} \; e' == o_1(y = o_2...) \; \mathbf{then}
             \quad \mathit{\color{blue}{// Call \; Expression}} \\
           && \qquad\qquad\qquad (\pi,s,n\cdot f,h) \leftarrow \sigma' \\
@@ -574,7 +577,8 @@ decrypted = crp.apply(
     <ul>
       <li>条件分岐とloopは無視</li>
       <ul>
-        <li>実験によって、速い速度で、あまり精度を落とさないことが示されている</li>
+        <li>高速な解析が可能</li>
+        <li>実験によって、あまり精度を落とさないことが示されている</li>
       </ul>
       <li>dick typingへの対応</li>
       <ul>
@@ -723,70 +727,70 @@ decrypted = crp.apply(
           <td>動的</td>
           <td>Java</td>
           <td>-</td>
-          <td>高</td>
+          <td class="ref-ok">高</td>
           <td>-</td>
-          <td>遅</td>
+          <td class="ref-ng">遅</td>
         </tr>
         <tr>
           <td>S.Fin, J.Dolby(WALA)['12]</td>
           <td>静的</td>
           <td>Java/JS</td>
           <td>pointer解析</td>
-          <td>低</td>
+          <td class="ref-ng">低</td>
           <td>flow & context</td>
-          <td>速</td>
+          <td class="ref-ok">速</td>
         </tr>
         <tr>
           <td>A.Feldthaus(ACG)[ICSE '13]</td>
           <td>静的</td>
           <td>JS</td>
           <td>flow</td>
-          <td>中</td>
+          <td class="ref-so">中</td>
           <td>flow & context</td>
-          <td>速</td>
+          <td class="ref-ok">速</td>
         </tr>
         <tr>
           <td>S.H.Jensen(TAJS)[ISAS '13]</td>
           <td>静的</td>
           <td>JS</td>
           <td>type</td>
-          <td>中</td>
+          <td class="ref-so">中</td>
           <td>flow & context</td>
-          <td>速</td>
+          <td class="ref-ok">速</td>
         </tr>
         <tr>
           <td>Github hser gak(pycallgraph)['14]</td>
           <td>動的</td>
           <td>Python</td>
           <td>-</td>
-          <td>中</td>
+          <td class="ref-so">中</td>
           <td>-</td>
-          <td>遅</td>
+          <td class="ref-ng">遅</td>
         </tr>
         <tr>
           <td>D.Fraser(Pyan)['14]</td>
           <td>静的</td>
           <td>Python</td>
           <td>-</td>
-          <td>低</td>
+          <td class="ref-ng">低</td>
           <td>-</td>
-          <td>速</td>
+          <td class="ref-ok">速</td>
         </tr>
         <tr>
           <td>V.Salis(PyCG)[ICSE '20]</td>
           <td>静的</td>
           <td>Python</td>
           <td>value-flow</td>
-          <td>中*</td>
+          <td class="ref-so">中*</td>
           <td>-</td>
-          <td>速</td>
+          <td class="ref-ok">速</td>
         </tr>
         <tr>
           <td>提案手法</td>
           <td>静的</td>
           <td>Python</td>
           <td>type</td>
-          <td>高</td>
+          <td class="ref-ok">高</td>
           <td>flow & context & path</td>
           <td>？</td>
         </tr>
@@ -814,6 +818,7 @@ decrypted = crp.apply(
       </ul>
     </ul>
   </div>
+
 </body>
 
 </html>
