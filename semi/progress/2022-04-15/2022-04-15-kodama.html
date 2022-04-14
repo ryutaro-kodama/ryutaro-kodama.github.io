@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2022-04-15</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>研究紹介(04/15)</h1>
+
+	<h2>研究概要</h2>
+	<ul>
+		<li>Pythonコードの正確な型解析(及びcall graph解析)</li>
+		<ul>
+			<li>forwardとbackwardの組み合わせにより、path-sensitivityをもった解析を目指す</li>
+		</ul>
+	</ul>
+
+	<h2>発表内容</h2>
+	<ul>
+		<li>どうしてPythonで型解析を行いたいか？</li>
+		<li>path-sensitivityとは何か？</li>
+		<li>提案手法の概要</li>
+	</ul>
+
+	<div id="どうしてPythonで型解析を行いたいか？">
+		<h2>どうしてPythonで型解析を行いたいか？</h2>
+		<ul>
+			<li>(大規模なモジュールに対しても、型の整合性を網羅的にチェックしたい)</li>
+			<li>他の静的解析(バグ・脆弱性検知)をするうえで助けになるため</li>
+		</ul>
+
+		<div>
+			<h3>型が分かると嬉しい</h3>
+			<p>ex.) SQL injectionの有無を解析したい</p>
+			<div>
+				<pre><code class="language-py line-numbers">
+class SelectManager(SQLManager):
+	def exec(cur, user_id):
+		sql = f"SELECT * FROM user WHERE user_id = {user_id}"
+		cur.execute(sql)
+		...
+
+class DeleteManager(SQLManager):
+	def exec(cur, user_id):
+		sql = f"DELETE FROM user WHERE user_id = {user_id}"
+		cur.execute(sql)
+		...
+
+manager = SelectManager()
+
+...
+
+manager.exec(cur, int(input()))  # ここで呼んでいるexecはどの関数オブジェクト？
+				</code></pre>
+			</div>
+			<p>型が分かれば、「関数の呼び出し先が何か」等が簡単に分かり、解析が行いやすくなる</p>
+		</div>
+	</div>
+
+	<div id="path-sensitivityとは何か？">
+		<p>型解析をできるだけ正確に行いたい</p>
+		<p>この「正確性」の観点で使われるのが、○○-sensitivityという言葉</p>
+		<ul>
+			<details>
+				<summary>flow-sensitivity</summary>
+				<ul>
+					<li>flow(実行順序)を区別するか否か</li>
+					<li>
+						<div>
+							<pre><code class="language-py line-numbers">
+manager = DeleteManager()
+...
+manager = UpdateManager()
+
+# flow-insensitive -> manager: DeleteManager or UpdateManager
+# flow-sensitive   -> manager: UpdateManager
+							</code></pre>
+						</div>
+					</li>
+				</ul>
+			</details>
+			<details>
+				<summary>context-sensitivity</summary>
+				<ul>
+					<li>context(どこで呼ばれたか)を区別するか否か</li>
+					<li>
+						<div>
+							<pre><code class="language-py line-numbers">
+if mode == "delete":
+    exec(DeleteManager(), user_id)
+elif mode == "update":
+	exec(UpdateManager(), user_id)
+
+def exec(manager, arg):
+    manager.exec(arg)
+
+    # context-insensitive -> manager: DeleteManager or UpdateManager
+    # context-sensitive   -> manager: DeleteManager(from L2),
+	#                                 UpdateManager(from L4)
+							</code></pre>
+						</div>
+					</li>
+				</ul>
+			</details>
+			<details>
+				<summary>element-sensitivity, field-sensitivity</summary>
+				<ul>
+					<li>element(listやdictionaryの要素)や、(構造体等の)fieldを区別するか否か</li>
+					<li>
+						<div>
+							<pre><code class="language-py line-numbers">
+manager_list = [DeleteManager(), UpdateManager()]
+
+# element-insensitive -> manager's element: DeleteManager or UpdateManager
+# element-sensitive   -> manager's element: DeleteManager(index 0),
+#                                           UpdateManager(index 1)
+							</code></pre>
+						</div>
+					</li>
+				</ul>
+			</details>
+			<div>
+				<li>path-sensitivity</li>
+				<ul>
+					<li>pathを区別するか否か</li>
+					<li>
+						<div>
+							<pre><code class="language-py line-numbers">
+if mode == "delete":
+	manager = DeleteManager()
+elif mode == "update":
+	manager = UpdateManager()
+
+# path-insensitive -> manager: DeleteManager or UpdateManager
+# path-sensitive   -> manager: DeleteManager(if mode == "delete"),
+#                              UpdateManager(index mode == "update")
+							</code></pre>
+						</div>
+					</li>
+					<li>単純に行おうとすると難しい</li>
+					<ul>
+						<li>\(2 ^ {\texttt{if文の数}}\)の場合分けが必要になるため</li>
+					</ul>
+			</div>
+			</ul>
+		</ul>
+	</div>
+	
+	<div id="提案手法">
+		<h2>提案手法</h2>
+		<ul>
+			<li>効率的にpath-sensitiveな解析を行いたい</li>
+			<li>backward解析を採用</li>
+			<ul>
+				<li><a href="https://dl.acm.org/doi/10.1145/2499370.2462186">cf.) Thresher[SIGPLAN '13]</a></li>
+				<li>特定の箇所にpath-sensitivityを適用したい(demand drivenに行いたい)場合、特に効率的に行うことができる</li>
+			</ul>
+			<li>2ステップに分けて解析を行う</li>
+			<ol>
+				<li>forwardでpath-insensitiveな解析により、型の候補を粗く集める</li>
+				<li>(エラーのある箇所や疑わしい箇所に)backward解析を適用し、余計な型を削除</li>
+			</ol>
+		</ul>
+
+		<h3>具体例(Motivating example)</h3>
+		<div class="flex">
+			<div class="flex-left">
+				<h4>1. 型の候補を粗く集める</h4>
+				<ul>
+					<li>L5: <code class="language-py">sigs</code>に<code class="language-py">None</code>を代入</li>
+					<li>L7: <code class="language-py">sigs</code>に<code class="language-py">Dict</code>を代入</li>
+					<li>L11: pathのmergeの結果、<code class="language-py">sigs</code>の型は<code class="language-py">None</code>or<code class="language-py">Dict</code></li>
+				</ul>
+				<p>このままでは11行目の関数呼出しがエラーと解析してしまう</p>
+				<p> -> 11行目の<code class="language-py">sigs</code>変数に対して、backward解析を適用</p>
+				
+				<h4>2. backward解析</h4>
+				<p>仮定(11行目の<code class="language-py">sigs</code>変数は<code class="language-py">None</code>型)の下、各実行パス毎に遡り、矛盾がないか確認</p>
+				<ul>
+					<li>L8からif文の中を通る場合: L7で<code class="language-py">sigs</code>に<code class="language-py">Dict</code>が代入されるので矛盾</li>
+					<li>L8からif文の中を通らない場合: L6の条件で<code class="language-py">not (sigs is None)</code>に矛盾</li>
+				</ul>
+				<p>全ての実行パスで矛盾が起こったので、<code class="language-py">sigs</code>変数は<code class="language-py">None</code>型を持ちえない(refute)ことが分かる</p>
+			</div>
+			<div class="flex-right">
+				<div class="sticky">
+					<pre><code class="language-py line-numbers">
+# mypy/stubgenc.py
+
+generate_c_function_stub()
+
+def generate_c_function_stub(sigs = None):
+	if sigs is None:
+		sigs = {}
+
+	...
+
+	sigs.get('name')
+	# FP: NoneType doesn't has attribute 'get'.
+					</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<h3>backwardに行うメリット</h3>
+		<ul>
+			<li>demend drivenな場合、余計なpathを解析しなくてよい(場合がある)</li>
+			<li>1つのpathを解析する際に、最初からtargetまで全て解析しなくてよい(場合がある)</li>
+			<ul>
+				<li>entry pointに到達する前に矛盾が起きたとき</li>
+			</ul>
+		</ul>
+		<p>forwardで行うことに比べ、効率的にpath-sensitiveな解析ができる(ハズ)</p>
+	</div>
+
+	<div id="call graph解析との関連">
+		<h2>call graph解析との関連</h2>
+		<ul>
+			<li>call graph</li>
+			<ul>
+				<li>関数の呼び出し関係をグラフ化したもの</li>
+			</ul>
+			<li>"call graph解析"という文脈上では、より高速な解析が求められる</li>
+			<ul>
+				<li>backward解析を行う対象の削減等の実施</li>
+			</ul>
+		</ul>
+	</div>
+
+</body>
+
+</html>
