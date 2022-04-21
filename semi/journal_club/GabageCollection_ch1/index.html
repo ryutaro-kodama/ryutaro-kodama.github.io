@@ -874,18 +874,22 @@ void funcA() {
 		<h2>Extra</h2>
 		<details>
 			<summary class="quiz">Explicitly memory managementとはどのようなものか？</summary>
+			free()などを使って、プログラマが明示的にメモリ管理を行う方法
 		</details>
 		<details>
 			<summary class="quiz">Automatically memory managementとはどのようなものか？</summary>
+			GCなどを使って、自動的にメモリ管理を行う方法
 		</details>
 		<details>
 			<summary class="quiz">GCが解決する問題とは何か？</summary>
+			Explicitly memory managementを行った際の(一部の)memory leak, dangling pointerなど
 		</details>
 		<details>
 			<summary class="quiz">GCのコスト(オーバーヘッド)はどの程度か</summary>
-		</details>
-		<details>
+			現在は数%~20%
+			<details>
 			<summary class="quiz">GCの各アルゴリズムはどのような観点から比較されるのか？</summary>
+			安全性, conprehensive, response time, GC自身のメモリ使用量, Collectionアルゴリズムのコスト, 移植可能性, メンテナンスのしやすさ
 		</details>
 	</div>
 
