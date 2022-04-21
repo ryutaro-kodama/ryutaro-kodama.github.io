@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>GC ch1: Introduction</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+  <h1>GC ch1: Introduction</h1>
+
+	<div id="Introduction">
+		<h2>Garbage collectorとは何か</h2>
+		<ul>
+			<li>Garbage Collection(GC):</li>
+			<ul>
+				<li>ストレージ(メモリ)を自動的にマネジメントする(方法・機能)</li>
+			</ul>
+		</ul>
+		<ul>
+			<li>今日のプログラムは多くの"dynamically allocated data"を使用する</li>
+			<ul>
+				<li>dynamically allocated data: ライフタイムが静的には決まらないデータ</li>
+			</ul>
+		</ul>
+		<ul>
+			<li>プログラマが手動で or ライブラリ等の手続きによって、dynamically allocated dataの確保・廃棄が行われる</li>
+			<ul>
+				<li>手動のマネジメントは望ましくない(行いたくない)</li>
+				<ul>
+					<li>再利用の処理をプログラムのランタイムに任せる</li>
+					<ul>
+						<li>プログラマは("確保の宣言")はする必要があるが、廃棄や再利用の処理を行う必要がなくなった</li>
+					</ul>
+					<li>GCが行っていることはまさしくこれ↑</li>
+					<ul>
+						<li>「dynamically allocated dataの自動的なマネジメント」</li>
+					</ul>
+				</ul>
+			</ul>
+		</ul>
+		<ul>
+			<li>2種類の方法</li>
+			<ul>
+				<li>direct technique</li>
+				<ul>
+					<li>ex.) reference couniting</li>
+				</ul>
+				<li>indirect technique</li>
+				<ul>
+					<li>ex.) tracing method</li>
+				</ul>
+				<li>GCはどちらも含む包括的な語として使用</li>
+			</ul>
+		</ul>
+		<ul>
+			<li>dynamic allocated dataの中身や構造を変更するようなもの(プログラム)とは区別するべき</li>
+			<ul>
+				<li>mutator: heap上の生きているdataの構造を変更するもの</li>
+				<ul>
+					<li>≒user program</li>
+				</ul>
+			</ul>
+		</ul>
+		<ul>
+			<li>この章では以下の3つの問いに対する答えを考えていく</li>
+			<ul>
+				<li>GCが解決する問題とは何か</li>
+				<li>GCのコストはどの程度か</li>
+				<li>GCの各アルゴリズムはどのような観点から比較されるのか</li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="1.1 History of storage allocation">
+		<h2>1.1 History of storage allocation</h2>
+
+		<div id="1.1.1 History of computer">
+			<h3>1.1.1 History of computer</h3>
+
+			<p>プログラミング言語の発展は、抽象化・自動化の進展と切っても切れない関係</p>
+
+			<table border="1">
+				<thead>
+					<th>年</th>
+					<th>出来事</th>
+					<th>影響</th>
+				</thead>
+				<tbody>
+					<tr>
+						<td rowspan="3">~1940</td>
+						<td>1bit毎に値を手動で切り替える</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>入出力機の発明</td>
+						<td>16進数のやり取りが簡単になる</td>
+					</tr>
+					<tr>
+						<td>mnemonic codeの登場</td>
+						<td>
+							理解しやすい単語を2進数に翻訳可能<br>
+							(未だ全ての実行の詳細を把握(ex. wordの数やジャンプ先の把握))
+						</td>
+					</tr>
+					<tr>
+						<td>1940-50</td>
+						<td>マクロやアセンブリ言語の登場</td>
+						<td>
+							numerical codeが意味の分かるシンボリックなコードに変わる<br>
+							(コンピューターの動作原理やデータの表現方法については理解する必要があった)
+						</td>
+					</tr>
+					<tr>
+						<td>~1952</td>
+						<td>初の実験的なコンパイラが誕生</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>1957</td>
+						<td>初のFortranコンパイラが誕生</td>
+						<td></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p>ユーザープログラムによって操作されるデータを表現するための資源を、対象のマシン上に確保する必要がある</p>
+		</div>
+
+		<div id="1.1.2 Three ways of allocation">
+			<h3>1.1.2 Three ways of allocation</h3>
+			<p>その資源の確保方法には大きく3種類の方法がある</p>
+
+			<h4>static allocation</h4>
+			<ul>
+				<li>コンパイル時に全ての識別子に応じてメモリを割り当てる</li>
+				<ul>
+					<li>実行時に割り当てが変更することはない</li>
+					<li>同じ手続きを呼べば、常に同じ場所にデータが確保される</li>
+				</ul>
+				<li>Fotran77まで(やoccam)で採用</li>
+				<li>limitation</li>
+				<ul>
+					<li>データ構造のサイズはコンパイル時に分かっていないといけない</li>
+					<li>再帰関数を使うことができない</li>
+					<li>データ構造を動的に作成することができない</li>
+				</ul>
+				<li>長所</li>
+				<ul>
+					<li>速い</li>
+					<ul>
+						<li>例えばスタックの確保・破棄等がないため</li>
+					</ul>
+					<li>データの確保場所にダイレクトにアクセスできる</li>
+					<li>実行時に"out of space"でプログラムが停止することがない</li>
+				</ul>
+			</ul>
+
+			<h4>stack allocation</h4>
+			<ul>
+				<li>各手続きが呼ばれると、stack上にフレームが確保される</li>
+				<ul>
+					<li>同じ手続きでも、違うアドレスを使用</li>
+				</ul>
+				<li>長所</li>
+				<ul>
+					<li>再帰関数が取り扱い可能</li>
+				</ul>
+				<li>limitation</li>
+				<ul>
+					<li>配列のような(可変長の)データ構造の大きさは、手続きに渡されるパラメータに依存する必要がある</li>
+					<li>あるコンテキストで呼ばれた手続き中の変数値を、別のコンテキストで呼ばれた際に一貫して使用することはできない</li>
+					<li>手続き内で作られたものを、手続き外で使用できない</li>
+					<li>サイズがコンパイル時に既知のオブジェクトしかreturnできない</li>
+				</ul>
+			</ul>
+
+			<h4>Heap allocation</h4>
+			<ul>
+				<li>heap領域にデータを確保</li>
+				<li>長所</li>
+				<ul>
+					<li>手続き外でもdynamic data等を使用可能</li>
+					<li>リストや木構造などの階層的な構造を再帰的に扱うことが可能となる</li>
+					<li>データ構造の大きさは動的に変更可能</li>
+					<li>動的なオブジェクトを手続きのreturnとして返すことが可能</li>
+					<li>suspensionやclosureが可能</li>
+				</ul>
+				<li>limitation</li>
+				<ul>
+					<li>動的に構造が変化する場合、実行時の"out of bounds"が起こる可能性がある</li>
+
+				</ul>
+			</ul>
+
+			<p>今日の多くの高級言語は、stackとheapの両方に確保することができる</p>
+			<p>heapへの確保の仕方で、以下のように分類することができる</p>
+
+			<table border="1">
+				<tbody>
+					<tr>
+						<td>explicitly</td>
+						<td>C, C++, Pascal</td>
+					</tr>
+					<tr>
+						<td>explicitly and automatically</td>
+						<td>Modula-3</td>
+					</tr>
+					<tr>
+						<td>automatically</td>
+						<td>Scheme, Dylan, ML, Haskell, Miranda, Prolog, Smalltalk, Eiffel, Java, Oberon</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="1.2 State, liveness and pointer reachability">
+		<h2>1.2 State, liveness and pointer reachability</h2>
+
+		<h3>liveness判定</h3>
+		<p>correct garbageするうえで、そのobjectがlivenessかどうか判断することが大切になる</p>
+		<h4>automatic memory managementでのliveness判定のための制約</h4>
+		<ul>
+			<li>プログラムが直接的に操作できる「値」はレジスタ、スタック、global変数内に存在する</li>
+			<li>これらの場所はheap上のデータへの参照を保持している</li>
+			<ul>
+				<li>heap上のデータへのアクセスのための"root"として機能する</li>
+			</ul>
+			<li>automatic heap memory managerでは、以下のことを制約として課す</li>
+			<ul>
+				<li>「動的に確保されたデータは先の"root"からのみアクセス可能」</li>
+				<li>適当にoffsetを取ってアクセスするような、ランダムアクセスは禁止</li>
+				<ul>
+					<li>このような制約はGCに固有のものではない</li>
+					<li>Pascalのような強い型付け言語でも見られる</li>
+					<li>Cでmalloc/freeのメモリ使用を安全に行う場合にも、この制約は存在する</li>
+				</ul>
+			</ul>
+		</ul>
+
+		<h4>node? cell? object?</h4>
+		<p>heap上に確保されたデータ片はnode, cell, object等と呼ばれたりする</p>
+
+		<h4>automatic memory managementでのliveness判定方法</h4>
+		<p>
+			上記のルールから、"生きている(liveness)"nodeの判別は、pointer reachabilityの問題として捉えることができる
+			\begin{equation*} \mathit{live} = \{ N \in \mathit{Nodes} | (\exists r \in \mathit{Roots.r} \rightarrow N) \lor (\exists M \in \mathit{live.M} \rightarrow N) \} \end{equation*}
+		</p>
+
+		<ul>
+			<li>liveness判定ではconservativeな方法が取られる</li>
+			<ul>
+				<li>conservative: 疑わしきは罰する</li>
+				<ul>
+					<li>livenessな可能性があるものは、全てlivenessと判断</li>
+				</ul>
+				<li>最適化コンパイラによる解析ではdeadだとわかるものでも、livenessだと判定してしまう場合もある</li>
+				<ul>
+					<li>ex.) ある手続き内で最後のuseが行われた変数</li>
+					<li>
+						<pre><code class="language-c">
+int func() {
+	User user = ...;
+
+	user.exec();
+
+	...
+	// Don't use 'user', but not free.
+	...
+
+	return 1;
+}
+						</code></pre>
+					</li>
+				</ul>
+				<li>cf.) Ch.9</li>
+			</ul>
+		</ul>
+
+		<ul>
+			<li>liveness判定のための手法は大きく2つに分かれる</li>
+			<ul>
+				<li>direct method</li>
+				<ul>
+					<li>heap上の"node自身"が、自身への全ての参照を記録する</li>
+					<li><img src="direct_method.svg" alt=""></li>
+					<li>ex.) reference count</li>
+				</ul>
+				<li>indirect method</li>
+				<ul>
+					<li>heap上の"node自身"が記録を行わない</li>
+					<li><img src="indirect_method.svg" alt=""></li>
+					<li>ex.) tracing</li>
+					<ul>
+						<li>全てのnodeを探索し、これらのnodeが占有していないメモリを全てdeadと判断</li>
+						<li>一般的に、memory確保が失敗したときに行われる</li>
+					</ul>
+				</ul>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="1.3 Explicit allocation on the heap">
+		<h2>1.3 Explicit allocation on the heap</h2>
+		<p>Exiplicit allocationによる例を通して、garmage managementが上手くいかないときの問題を考える</p>
+
+		<div id="1.3.1 A simple example">
+			<h3>1.3.1 A simple example</h3>
+			<p>例えばPascalでは、<code class="language-c">new(p)</code>や<code class="language-c">dispose(p)</code>を使ってオブジェクトの確保・廃棄を行う</p>
+			<div>
+				<pre><code class="language-c">
+program pointer(input, output);
+
+type ptr = ↑cell;
+     cell = record
+			    value : integer;
+			    next :  ptr;
+			end;
+
+var myList : ptr;
+
+function Insert (item : integer, list : ptr) : ptr;
+var temp : ptr;
+begin
+		new(temp);    // ★
+		temp↑.value := item;
+		temp↑.next := list;
+		Insert := temp
+end;
+
+begin
+		myList := Insert(1, Insert(2, Insert(3, nil)))
+end.
+				</code></pre>
+			</div>
+		</div>
+		<img src="pascal_create_list.svg" alt="">
+
+		<div id="1.3.2 Garbage">
+			<h3>1.3.2 Garbage</h3>
+			<ul>
+				<li>Garbage</li>
+				<ul>
+					<li>liveではないが、freeもされていないオブジェクト</li>
+					<li>Explicit deallocationでは、garbageのある場所を再利用できない</li>
+					<ul>
+						<li>memory leakにつながる</li>
+					</ul>
+					<li>ex.) <code class="language-c">myList↑.next := nil;</code></li>
+					<li><img src="pascal_assign_nil.svg" alt=""></li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="1.3.3 Dangling references">
+			<h3>1.3.3 Dangling references</h3>
+			<ul>
+				<li>まだ参照されているオブジェクトがdeallocateされる場合もある</li>
+				<ul>
+					<li>ex.) <code class="language-c">dispose(myList↑.next);</code></li>
+					<ul>
+						<li><img src="pascal_dangling.svg" alt=""></li>
+						<li>この場合、item2はheap managerに返却されるが、item3はgarbageとなる</li>
+						<li>この時、item1の<code class="language-c">next</code>はdeallocateされたメモリを参照する</li>
+						<ul>
+							<li>このような状態が"dangling reference"</li>
+						</ul>
+					</ul>
+				</ul>
+				<ul>
+					<li>dangling pointerの先に新しいオブジェクトが作成されると、1つのアドレスが2つの異なるオブジェクトを指しているようにプログラムが動いてしまう</li>
+					<ul>
+						<li><img src="pascal_dangling_two_ref.svg" alt=""></li>
+						<li>間違った結果を返す可能性がある</li>
+					</ul>
+					<li>dangling pointerが生まれたら、プログラムをクラッシュさせるのがベストな方法</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="1.3.4 Sharing">
+			<h3>1.3.4 Sharing</h3>
+			<ul>
+				<li>Garbageとdangling referencesはコインの表裏の関係にある</li>
+				<ul>
+					<li>Garbage: オブジェクトがdeallocateされる前に、それを指す最後の参照がdestructされたとき</li>
+					<li>Dangling references: オブジェクトがdeallocateされたときに、まだそれを指す参照があったとき(destructされていない時)</li>
+					<li>Deallocateとdestructionが協調して適切なタイミングで行われる必要がある</li>
+					<ul>
+						<li>(それが難しい)</li>
+					</ul>
+				</ul>
+				<li>1つのオブジェクトを2つの異なる先から参照している場合</li>
+				<ul>
+					<li><img src="sharing_cat_mat.svg" alt=""></li>
+					<li>片方の先頭itemのdisposeによって、残りの要素をdisposeすると、もう片方の先頭itemはdangling referenceになる</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="1.3.5 Failures">
+			<h3>1.3.5 Failures</h3>
+			<ul>
+				<li>Explicit wayでのメモリ管理:</li>
+				<ul>
+					<li>難しい</li>
+				</ul>
+				<li>失敗時の影響</li>
+				<ul>
+					<li>(マルチスレッドプログラムのような場合特に、)非決定的なエラーとして表面化する</li>
+					<li>Dangling referenceが"良い感じ"に動作し、テストではmemory leakが見つからない</li>
+					<li>長期間の使用、本番の少メモリ環境で初めて表面化する</li>
+					<ul>
+						<li>デバッグが難しい</li>
+					</ul>
+				</ul>
+			</ul>
+		</div>
+	</div>
+
+	<div id="1.4 Why garbage collect?">
+		<h2>1.4 Why garbage collect?</h2>
+
+		<div id="Language requirements">
+			<h4>Language requirements</h4>
+			<ul>
+				<li>特定の仕様をもつプログラムでは、GCが必須となる</li>
+				<li>ex.) ある手続き内で作られたデータ構造を、手続き外でも使用したい場合:</li>
+				<ul>
+					<li>ある地点で特定のオブジェクトをdeallocateできるか否かを決定するのは困難</li>
+					<li>このような機能をもつプログラミング言語では、GCは必須</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="Problem requirements">
+			<h4>Problem requirements</h4>
+			<ul>
+				<li>処理が煩雑になるのを防ぐため、GCの機能が求められる場合がある</li>
+				<li>ex.) stackデータ構造を作り、popしたとき、popされたオブジェクトのdeallocateは必要か？:</li>
+				<ul>
+					<li>statically allocate: 不要</li>
+					<li>popされたオブジェクトへの参照が1つの場合: 必要</li>
+					<li>そのデータが他のstackにpushされるかもしれない場合: 分らん</li>
+				</ul>
+				<li>Gabargeを自動で集めてくれないと、利用者がこの使い分けをせねばならず、interfaceが複雑になる</li>
+				<ul>
+					<li>移植性の低下や不必要なコピー等に繋がる</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="Software engineering issues">
+			<h4>Software engineering issues</h4>
+			<p>大規模なシステムを管理するためによく利用される"ツール"はabstractionとmodularity</p>
+			<p>これらと、explicit memory management, automatic memory managementとの相性を見ていく</p>
+
+			<table border="1">
+				<thead>
+					<th colspan="2"></th>
+					<th>Explicit memory management</th>
+					<th>Automatic memory management</th>
+				</thead>
+				<tbody>
+					<tr>
+						<td colspan="2">abstraction</td>
+						<td>low-levelのメモリ管理が必要</td>
+						<td>low-levelのメモリ管理が不要</td>
+					</tr>
+					<tr>
+						<td rowspan="2">modulality</td>
+						<td>understandable</td>
+						<td>
+							あるmoduleでのleakを通して、別のmoduleでのエラーに繋がる<br>
+							(moduleの振る舞いがcontextに独立しなくなっている)
+						</td>
+						<td>左記のようなことがない</td>
+					</tr>
+					<tr>
+						<td>疎結合性</td>
+						<td>"object管理帳"をやり取りするのは抽象化や移植性を低める</td>
+						<td>左記のようなことがない</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p>以上の点から、GCを用いたautomatic memory managementは有用</p>
+		</div>
+
+		<div id="なぜオブジェクト指向言語でGCが広く採用されているか">
+			<h4>なぜオブジェクト指向言語でGCが広く採用されているか</h4>
+			<ul>
+				<li>Explicit memory managementはstepwise refinement(段階的詳細化法)によってデザインされた階層的な一枚岩のシステムでは効率的で適切</li>
+				<li>このようなシステムでは、オブジェクト指向の原則(疎結合等)に反していることが多い</li>
+				<li>オブジェクト指向言語とExplicit memory managementは相性が悪い</li>
+			</ul>
+		</div>
+
+		<div id="others">
+			<h4>others</h4>
+			<ul>
+				<li>heap memory managementに関する研究</li>
+				<ul>
+					<li>[CenterLine 1992], [Purity 1992]:</li>
+					<ul>
+						<li>+: 正しいmemory managementの重要性と、その難しさを明らかにする</li>
+						<li>-: overheadが大きく、debug環境でしか有用でない, 再利用性の問題を解決していない</li>
+					</ul>
+					<li>[Rovner 1985]</li>
+					<ul>
+						<li>+: Mesaシステムの開発時間の40%がmemory managementに捧げられる</li>
+					</ul>
+				</ul>
+			</ul>
+
+			<ul>
+				<li>Explicit memory managementによって解決を図る方法として、静的にallocateする方法やモジュール間でコピーをやり取りする方法が提案されている</li>
+				<ul>
+					<li>静的にallocateするのやモジュール間でコピーをやり取りするのは、spaceの無駄遣い</li>
+				</ul>
+				<li>あとは、domain-specificなGCを使う方法</li>
+				<ul>
+					<li>使用分野が限られているため、徐々にしか償却されない</li>
+					<li>よって、テストが雑だったりする</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="No silver bullet">
+			<h4>No silver bullet</h4>
+			<p>GCが全てのプログラムの個々の問題を解決するのではない</p>
+
+			<table border="1">
+				<thead>
+				</thead>
+				<tbody>
+					<tr>
+						<th>mempry leak</th>
+						<td>(ほぼ)解決</td>
+					</tr>
+					<tr>
+						<th>dangling pointer</th>
+						<td>(ほぼ)解決</td>
+					</tr>
+					<tr>
+						<th>
+							上記以外のエラー<br>ex.)out of bounds
+						</th>
+						<td>解決できない</td>
+					</tr>
+					<tr>
+						<th>performance</th>
+						<td>Explicitな方法により、パフォーマンスが改善する可能性もある</td>
+					</tr>
+					<tr>
+						<th>debug</th>
+						<td>難しい</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p>GCの一番の強みは、software components間の単純なinterfaceを提供すること</p>
+
+			<ul>
+				<li>≒ 実装を抽象化できる</li>
+				<li>抽象表現中では参照していないはずのオブジェクトを、具体表現中では参照してしまっている場合、違った形のエラーが起こる可能性がある</li>
+				<ul>
+					<li>ex.) stackのarray実装</li>
+					<ul>
+						<li><img src="stack_top.svg" alt=""></li>
+						<li>top-of-stack pointerをずらしても、popしたはずのオブジェクトにアクセスできてしまう</li>
+					</ul>
+				</ul>
+				<li>GCが完全・完璧というわけではない</li>
+			</ul>
+		</div>
+
+		<div id="GCを使ってもmemory leakが起こる例">
+			<h4>GCを使ってもmemory leakが起こる例</h4>
+			<p>以下のように、frameの適切なclearが行われないとmemory leakになることもある</p>
+			<ul>
+				<li>ex.) あるフレーム内でのpointerに対し、最後の使用後にnull化を失敗</li>
+				<li>ex.) 手続きA内で手続きBが呼ばれ、その後手続きCが呼ばれる場合を想定</li>
+				<div class="flex">
+					<div class="flex-left">
+						<div class="sticky">
+							<ol>
+								<li>そのフレーム内で、pointer xがあるオブジェクトを参照する</li>
+								<li>もしそのフレーム(手続きB)が正しく破棄されなかった場合を仮定</li>
+								<ul>
+									<li>(破棄の操作はコストが高いため行われない場合が多い)</li>
+								</ul>
+								<li>別のフレーム(手続きC)を構築</li>
+								<ul>
+									<li>このとき、xがあった場所は上書きされ、objは再びreachableになってしまう</li>
+								</ul>
+							</ol>
+						</div>
+					</div>
+					<div class="flex-right">
+						<pre><code class="language-c">
+void funcA() {
+	funcB();
+	funcC();
+}
+						</code></pre>
+						<img src="gc_memory_leak1.svg" alt="" width="250px">
+						<img src="gc_memory_leak2.svg" alt="" width="250px">
+						<img src="gc_memory_leak3.svg" alt="" width="250px">
+					</div>
+				</div>
+				<div class="flex">
+					<div class="flex-left">
+						<ul>
+							<li>一般的に、xは次のcollectionまでに正しい参照先を指す</li>
+							<ul>
+								<li>問題はないと言われている</li>
+							</ul>
+							<li>ただしマルチスレッドプログラムにおいて、Cの実行がロックされてしまった場合、xが正しい参照先を指さないままの場合がある</li>
+						</ul>
+					</div>
+					<div class="flex-right">
+						<img src="gc_memory_leak_extra.svg" alt="" width="250px">
+					</div>
+				</div>
+			</ul>
+		</div>
+	</div>
+
+	<div id="1.5 How costly is garbage collection?">
+		<h2>1.5 How costly is garbage collection?</h2>
+
+		<ul>
+			<li>GCはオーバーヘッドが大きいことが有名</li>
+			<ul>
+				<li>ex.) Lispプログラムの実行時間の40%はGCの動作に使用(1979~80)</li>
+			</ul>
+			<li>ただし、そもそもGCを搭載している言語は、元から実行が遅い</li>
+			<ul>
+				<li>特にinterpretive languageでは、GCの割合が小さくなる</li>
+				<li>GCが一概に悪いとは言えない</li>
+			</ul>
+			<li>現在の手法は大幅に改善されている</li>
+			<ul>
+				<li>ex.) システムプログラミングに使われている言語(Modula-2+, Module-3)にもGCが搭載されている</li>
+			</ul>
+			<li>GCのコストは実装・言語依存</li>
+			<ul>
+				<li>-> 簡単な処方箋はない</li>
+			</ul>
+			<li>(執筆時点の)一般的には、実行時間に占める割合が数%~20%程度</li>
+		</ul>
+	</div>
+
+	<div id="1.6 Comparing garbage collection algorithms">
+		<h2>1.6 Comparing garbage collection algorithms</h2>
+		<ul>
+			<li>異なるGCアルゴリズムを比較するのは困難</li>
+			<ul>
+				<li>計算量は比較可能だが...</li>
+				<ul>
+					<li>実装方法によって、実行時間が大きく変わる場合がある</li>
+				</ul>
+			</ul>
+			<li>本節では、GCアルゴリズムを比較する際のfactorを見ていく</li>
+			<ul>
+				<li>実装方法, heapに存在するliveなオブジェクトの数, memoryへのアクセスパターン等、様々な要因</li>
+				<li>どのアルゴリズムが最高というのはない</li>
+				<ul>
+					<li>様々なfactorから最適のアルゴリズムを使うのが大事</li>
+				</ul>
+			</ul>
+		</ul>
+
+		<div class="安全性">
+			<h4>安全性</h4>
+			<ul>
+				<li>GCのアルゴリズムを選ぶ上での最重要ポイント:「安全性」</li>
+				<ul>
+					<li>liveなオブジェクトを壊したりしないこと</li>
+					<ul>
+						<li>"攻めた"最適化コンパイラによっては、この原則が破られる場合がある</li>
+						<ul>
+							<li>ex.) 最後のuse後にすぐ破壊</li>
+						</ul>
+						<li>cf.) ch.9 Conservative compiler</li>
+					</ul>
+				</ul>
+			</ul>
+		</div>
+
+		<div class="comprehensive">
+			<h4>comprehensive</h4>
+			<ul>
+				<li>GCはcomprehensiveであるべき</li>
+				<ul>
+					<li>heap全体を(comprehensiveに)管理(監視)するべき</li>
+					<ul>
+						<li>garbageとなったものをすぐに回収可能</li>
+					</ul>
+					<li>一部のGCはheapをいくつか(region)に分け、そのうえで全体をcomprehensiveに管理する</li>
+					<ul>
+						<li>+: 実行中のユーザープログラムで使わないregionに対し、実行とcollectを同時並行できる</li>
+						<li>-: regionにまたがるデータ構造をcollectするのが苦手</li>
+						<li>(常にユーザープログラムを実行し続けられるわけではない)</li>
+					</ul>
+				</ul>
+			</ul>
+		</div>
+
+		<div class="response time">
+			<h4>response time</h4>
+			<ul>
+				<li>GCのオーバーヘッドを時間の観点から考える際にもう1つ考えるべきこと: response time</li>
+				<ul>
+					<li>allocateを素早くできるかが大切</li>
+					<ul>
+						<li>1つの場所にまとめて確保するより、ばらばらの場所に確保してしまう方が時間がかかる</li>
+						<li>多様なサイズのデータをいかに効率よくheap上に確保するかは、GCだけでなく、全てのheap management systemの課題</li>
+					</ul>
+				</ul>
+			</ul>
+		</div>
+
+		<div class="GC自身のメモリ使用量">
+			<h4>GC自身のメモリ使用量</h4>
+			<ul>
+				<li>GC自身のメモリ使用量も考慮するべき</li>
+				<ul>
+					<li>ex.) 各セル内のreference countを保持する領域</li>
+					<li>ex.) (stack等の)補助データ構造を保持する領域</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div class="Collectionアルゴリズムのコスト">
+			<h4>Collectionアルゴリズムのコスト</h4>
+			<ul>
+				<li>Collectionアルゴリズムのコストは、単純な計算量では測れない</li>
+				<ul>
+					<li>heapのサイズや保持されているデータ量でコストは変わる</li>
+					<li>計算量の定数値も大事になる</li>
+					<li>collectorの命令数で単純に決まるものではない</li>
+					<li>GC毎に仮想メモリとキャッシュでの性能が異なる</li>
+					<ul>
+						<li>GCの振る舞いを調整することで、両方の性能を向上可能</li>
+					</ul>
+				</ul>
+				<li>heapの占有率はコストに影響を与える場合もあれば、与えない場合もある</li>
+				<ul>
+					<li>ex.) reference counter: 影響を与えない</li>
+					<li>ex.) tracing: 影響を与える</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div class="others">
+			<h4>others</h4>
+			<ul>
+				<li>GCアルゴリズムは、汎用的である場合もあれば、特定のプログラミング言語やイディオムに限定される場合もある</li>
+			</ul>
+		</div>
+
+		<div class="まとめ">
+			<h4>まとめ</h4>
+			<ul>
+				<li>上記の各要素は独立というわけではない(≒tradeoff)</li>
+				<ul>
+					<li>使われる状況に応じて適切なアルゴリズムを選ぶ必要がある</li>
+				</ul>
+				<li>その他の考慮されるべき点:</li>
+				<ul>
+					<li>移植可能性</li>
+					<li>メンテナンスのしやすさ</li>
+				</ul>
+				<li>slogan: "know the requirements of your system and understand the demographics --the volume, type, topology and lifetime-- of the data that it generates"</li>
+			</ul>
+		</div>
+
+	</div>
+
+	<div id="Notation">
+		<h2>1.7 Notation</h2>
+		<p>これ以降の章で仮定されるheapの構造と、その上に置かれるobjectの構造について確認しておく</p>
+
+		<div id="1.7.1 The heap">
+			<h3>1.7.1 The heap</h3>
+			<ul>
+				<li>heap:</li>
+				<ul>
+					<li>word単位の連続した配列 or word単位の不連続なブロックの集合</li>
+				</ul>
+				<li>heap上のデータ:</li>
+				<ul>
+					<li>cells, nodes, objectsと呼ぶ</li>
+				</ul>
+				<li>cell:</li>
+				<ul>
+					<li>fieldを持つbyte or wordの連続した配列</li>
+					<li>fieldはpointer or non-pointerな値を持つ</li>
+					<li>pointer filedを持たないcellは特にatomと呼ぶ</li>
+					<li><img src="cell_atom.svg" alt=""></li>
+				</ul>
+				<li>(図:)</li>
+				<ul>
+					<li>node: データ</li>
+					<li>arc: 参照関係</li>
+				</ul>
+				<li>(表記:)</li>
+				<ul>
+					<li>\(\texttt{Heap}\): slotの連続した配列</li>
+					<ul>
+						<li>slotの大きさ: 1 object or 1 word</li>
+					</ul>
+					<li>( \(\texttt{Heap_bottom}, \texttt{Heap_top}\) )</li>
+				</ul>
+			</ul>
+		</div>
+	</div>
+
+	<div id="1.7.2 Pointers and children">
+		<h3>1.7.2 Pointers and children</h3>
+		<ul>
+			<li>(表記:)</li>
+			<ul>
+				<li>\(\texttt{Children(N)}\): あるcell \(\texttt{N}\)の全てのpointer fieldが指すcellのリスト</li>
+				<li>\(\texttt{N[i]}\): あるcell \(\texttt{N}\)の\(\texttt{i}\)番目の要素</li>
+				<li>\(\texttt{*p}\): pointer field \(\texttt{p}\)が指す先のcellの先頭アドレス</li>
+				<li><img src="pointers_and_children.svg" alt="" width="500px"></li>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="1.7.3 Pseudo-code">
+		<h3>1.7.3 Pseudo-code</h3>
+		<ul>
+			<li>pseudo-codeを使う理由:</li>
+			<ol>
+				<li>変数宣言などの余計なコードを削除可能</li>
+				<li>大事なところに重きを置いた説明が可能</li>
+				<li>特定の言語の記述方法に沿った誤解を無くすことが可能</li>
+			</ol>
+			<li>mutatorが実行する命令:</li>
+			<ul>
+				<li>\(\texttt{New()}, \texttt{New(size)}\): heap managerから新しいオブジェクトを取得し、そのオブジェクトの先頭アドレスを返す</li>
+				<ul>
+					<li>オブジェクトのサイズを引数で指定可能</li>
+				</ul>
+				<li>\(\texttt{Update(field, value)}\): cell内の\(\texttt{field}\)の値を\(\texttt{value}\)に変更</li>
+			</ul>
+			<li>制御構造はインデントで表現</li>
+			<li>複数変数の代入が一度に可能</li>
+			<ul>
+				<li>ex.) a, b = b, a</li>
+			</ul>
+			<li>比較演算子:</li>
+			<ul>
+				<li>\(\leq, \geq, \neq\)</li>
+			</ul>
+			<li>手続きは返り値は1つのみ</li>
+		</ul>
+	</div>
+
+
+</body>
+
+</html>
+
