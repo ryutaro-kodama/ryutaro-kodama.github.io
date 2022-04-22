@@ -658,6 +658,10 @@ void funcA() {
 				<li>-> 簡単な処方箋はない</li>
 			</ul>
 			<li>(執筆時点の)一般的には、実行時間に占める割合が数%~20%程度</li>
+			<li>(だけど今でもGCは結構重い。だからiOSはmark-sweepじゃなくて、RCを使ってる)</li>
+			<ul>
+				<li><a href="https://medium.com/computed-comparisons/garbage-collection-vs-automatic-reference-counting-a420bd4c7c81">Garbage Collection vs Automatic Reference Counting</a></li>
+			</ul>
 		</ul>
 	</div>
 
@@ -766,7 +770,15 @@ void funcA() {
 		<div class="others">
 			<h4>others</h4>
 			<ul>
-				<li>GCアルゴリズムは、汎用的である場合もあれば、特定のプログラミング言語やイディオムに限定される場合もある</li>
+				<li>移植可能性</li>
+				<ul>
+					<li>GCアルゴリズムは、汎用的である場合もあれば、特定のプログラミング言語やイディオムに限定される場合もある</li>
+				</ul>
+				<li>メンテナンスのしやすさ</li>
+				<ul>
+					<li><q>GCはしばしばチューニングされるのでコードが巨大で複雑になり、バグを含み、保守が大変</q></li>
+				</ul>
+				<li>マルチスレッドプログラムへの対応性</li>
 			</ul>
 		</div>
 
@@ -776,11 +788,6 @@ void funcA() {
 				<li>上記の各要素は独立というわけではない(≒tradeoff)</li>
 				<ul>
 					<li>使われる状況に応じて適切なアルゴリズムを選ぶ必要がある</li>
-				</ul>
-				<li>その他の考慮されるべき点:</li>
-				<ul>
-					<li>移植可能性</li>
-					<li>メンテナンスのしやすさ</li>
 				</ul>
 				<li>slogan: "know the requirements of your system and understand the demographics --the volume, type, topology and lifetime-- of the data that it generates"</li>
 			</ul>
