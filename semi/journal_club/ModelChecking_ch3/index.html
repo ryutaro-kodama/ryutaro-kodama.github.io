@@ -84,10 +84,11 @@
 			</ul>
 			<p>この後の内容:</p>
 			<ul>
-				<li>Kripke structureの形式的定義()</li>
+				<li>Kripke structureの形式的定義</li>
 				<li>一階述語論理からKripke structureに変換する方法</li>
 				<li>programを一階述語論理に変換する方法</li>
 				<li>(プログラムをKripke structureでmodel化することが可能になる)</li>
+				<li><img src="overview.svg" alt=""></li>
 			</ul>
 		</ul>
 	</div>
@@ -133,9 +134,11 @@
 
 		<h4>state labels</h4>
 		<ul>
-			<li>状態を細かく観察する役割</li>
-			<li>別名atomic propositions</li>
-			<li>全てのatomic propositionの集合を\(\mathit{AP}\)と書く</li>
+			<li>特定の状態を表すシンボル</li>
+			<ul>
+				<li>state label(s)で表す1つ1つの性質をatomic propositionという</li>
+				<li>全てのatomic propositionの集合を\(\mathit{AP}\)と書く</li>
+			</ul>
 			<li>
 				<div class="flex">
 					<table border="1" class="flex-left">
@@ -229,6 +232,7 @@
 				<li>始めは電気がついていない</li>
 				<li><img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/light_switch.svg" alt=""></li>
 			</ul>
+			<li>ex.)concurrent programのスケジューリング</li>
 			<li>人間の行動をmodel化できないので、以下の部分にnondeterminismを使用する</li>
 			<ul>
 				<li>初期状態: ボタンを押しているか・押していないかは分からない</li>
@@ -342,7 +346,7 @@
 			</ul>
 			<li>transition relation \(R \subseteq S \times S\)に対し:</li>
 			<ul>
-				<li>\(\mathcal{R}(V,V')\)がtransitionを表す</li>
+				<li>\(\mathcal{R}(V,V')\)がtransition formulaを表す</li>
 			</ul>
 			<ul>
 				<li>
@@ -357,7 +361,7 @@
 							<details>
 								<summary></summary>
 								\(v_1\): <span style="color: red;">一定</span><br>
-								\(v_2\): <span style="color: red;">(1)増えた</span><br>
+								\(v_2\): <span style="color: red;">(1だけ)増えた</span><br>
 								\(v_3\): <span style="color: red;">関係ない</span>
 							</details>
 						</li>
@@ -369,13 +373,24 @@
 
 		<h4>first-order logicでatomic propositionを表現してみよう</h4>
 		<ul>
-			<li>あるpropertyがtrueであるかfalseであるかは、state(=valuation)に依る</li>
+			<li>各label \(l \in \mathit{AP}\)に対し:</li>
 			<ul>
-				<li>(変数と値の関係で表せそう...)</li>
+				<li>\(s \vDash l \Leftrightarrow l \in L(s)\)  (状態\(s\)でlabel \(l\)はtrue)</li>
+				<ul>
+					<li><img src="label_in_state1.svg" alt="" width="50px"></li>
+				</ul>
+				<li>\(s \not \vDash l \Leftrightarrow l \not \in L(s)\)</li>
+				<ul>
+					<li><img src="label_in_state2.svg" alt="" width="50px"></li>
+				</ul>
 			</ul>
-			<li>特にlabel \(l \in \mathit{AP} \)は次のように書くことができる:</li>
+			<li>あるstateでのpropertyがtrueであるかfalseであるかは、valuationに依る</li>
 			<ul>
-				<li>\(v = d \quad\) where \(v \in V, d \in D_v\)</li>
+				<li>(propertyが成り立っているか否かは、valuationと値の関係で表せそう...)</li>
+				<li>label \(l \in \mathit{AP} \)は次のように書くことができる:</li>
+				<ul>
+					<li>\(l\): \(v = d \quad\) where \(v \in V, d \in D_v\)</li>
+				</ul>
 				<ul>
 					<li>\(s(v)=d\)であれば、state \(s\)で命題\((v = d)\)がtrue</li>
 					<ul>
@@ -388,16 +403,17 @@
 			<ul>
 				<li>ex.) \(v_1 > v_2 \land v_2 > v_3\)</li>
 			</ul>
-			<li>各label \(l \in \mathit{AP}\)に対し:</li>
+			<li>Boolean domainのとき( \(D_v = \{\mathit{true}, \mathit{false}\}\) )は以下の略記系を使用</li>
 			<ul>
-				<li>\(s \vDash l\): \(l \in L(s)\)  (状態\(s\)でlabel \(l\)はtrue)</li>
-				<li>\(s \not \vDash l\): \(l \not \in L(s)\)</li>
+				<li>\(s(v) = \mathit{true} : s \vDash v \)</li>
+				<li>\(s(v) = \mathit{false} : s \vDash \neg v \)</li>
 			</ul>
 		</ul>
 
 		<h4>first-order logicでKripke structureを再び構成してみよう</h4>
+		<p>Kripke structure \( (S, S_0, R, AP, L) \)に対し</p>
 		<ul>
-			<li>states \(S\)の集合 = \(V\)に対しての全てのvaluationの集合</li>
+			<li>states \(S\)の集合 = \(V\)に対しての全てのvaluationの(組み合わせの)集合</li>
 			<li>initial states \(S_0\)の集合 = 式\(\mathcal{S}_0\)を満たす(\(s_0 \vDash \mathcal{S}_0\))全てのvaluationの集合</li>
 			<li>2つのstate \(s,s'\)が\(R(s,s')\)の関係にある  \(\; \mathit{iff} \;\) \(s,s' \vDash \mathcal{R}\)</li>
 			<li>\(L(s)\)は、state \(s\)においてtrueとなる全てのラベルの集合(\(s \vDash l\))</li>
@@ -559,7 +575,7 @@
 		</ul>
 
 		<h4>例題</h4>
-		<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/boolean_encoding.svg" alt="">
+		<img src="https://ryutaro-kodama.github.io/slides/semi/journal_club/ModelChecking_ch3/boolean_encoding.svg" alt="" width="550px">
 		<ul>
 			<li>\(S_0\)を、\(v_0,v_1\)を使った論理式で表したい</li>
 			<ul>
@@ -596,7 +612,7 @@
 						\(=\mathit{false}\)
 					</details>
 				</ul>
-			</ul>
+				<img src="boolean_encoding.svg" alt="" width="300px">
 			</ul>
 		</ul>
 	</div>
@@ -611,7 +627,7 @@
 			<ul>
 				<li>state-holding elements:</li>
 				<ul>
-					<li>circuit中のdataを保持するために使われる要素</li>
+					<li>(circuit中で)状態(data)をする要素</li>
 					<li>ここでは0or1の値しか保持しないと仮定</li>
 				</ul>
 				<li>(0or1の値しかとらないので、)各要素に0or1の値を割り当て、式としてstateやtransitionを表現する</li>
