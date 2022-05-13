@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2022-05-20_shogi</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>将棋ソフトが提示する"手"は「正しい」のか</h1>
+  <ul>
+    <li>近年の将棋ソフト: プロ棋士でも太刀打ちできない</li>
+    <li>ある局面での「正解手」を知るために将棋ソフトを使う人が多い</li>
+    <ul>
+      <li>将棋ソフトが教えてくれる手は本当に正しい(≡一番勝ちやすい)のか？</li>
+    </ul>
+  </ul>
+  
+  <h2>将棋ソフトが考えているもの</h2>
+  <p><strong>相手が常に最善手を指した</strong>ときの、<strong>局面の評価値が最善になる</strong>手</p>
+  <img src="shogi1.svg" alt="" width="600px">
+  <p>相手は最善の手を指すので...</p>
+  <img src="shogi2.svg" alt="" width="600px">
+  <p>本当にこの手がいいのか？ -> 局面でのある手の"指しやすさ(思いつきやすさ)"を%化してみると...</p>
+  <img src="shogi3.svg" alt="" width="600px">
+  <p>実戦的に勝ちやすい = 少し間違えてもひどい事故にはならない</p>
+  <img src="shogi4.svg" alt="" width="600px">
+
+  <h2>将棋ソフトは正しいの？</h2>
+  <ul>
+    <li>一番評価値が良くなるための手は教えてくれる</li>
+    <ul>
+      <li>それが「一番勝ちやすい手」かどうかは不明</li>
+    </ul>
+  </ul>
+
+  <h2>藤井聡太竜王はなぜ強いのか？</h2>
+  <ul>
+    <li>盤面評価の感覚が将棋ソフトに近い</li>
+    <li>読みが速い</li>
+    <li>読みが深い</li>
+    <li>相手が間違えやすい局面(実戦的に勝ちにくい局面)に誘導するのが上手い</li>
+  </ul>
+  <p>(と言われている)</p>
+
+</body>
+
+</html>
