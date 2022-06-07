@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>GC ch6: Copying Garbage Collection</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+  <h1>GC ch6: Copying Garbage Collection</h1>
+
+	<div id="Introduction">
+		<h2>Copying Garbage Collectionとは何か</h2>
+
+		<h3>復習</h3>
+
+		<h3>特徴</h3>
+		<ul>
+			<li>write時にoverheadが(ほぼ)ない</li>
+			<ul>
+				<li>pointerの移動のみ</li>
+			</ul>
+			<li>copyingのコストはlive dataの量に依存</li>
+			<ul>
+				<li>heapの大きさには依存しない</li>
+			</ul>
+			<li>この手法に基づいてより効率的な手法を実装するのが楽</li>
+			<ul>
+				<li>cf.) incremental GC, genarative GC </li>
+			</ul>
+			<li>virtual memory machineと相性が良い</li>
+			<ul>
+				<li>使わないsemi-space領域をストレージ上に退避できる</li>
+			</ul>
+			<li>live dataを"compactionしながら移し替える"</li>
+		</ul>
+
+		<h3>"compactionしながら移し替える"メリット</h3>
+		<ul>
+			<li>heap -> "push only stack"とできる</li>
+			<ul>
+				<li>allocationが単にpointerの増加操作とできる</li>
+			</ul>
+			<li>様々な大きさのobjectも一律なコストでallocateできる</li>
+			<ul>
+				<li>cf.) two-fingers compaction method</li>
+			</ul>
+			<li>より少ないpageにlive dataを収めることができる</li>
+		</ul>
+		
+		<h3>デメリット</h3>
+		<ul>
+			<li>heapを2つに分ける必要がある</li>
+			<li>再帰的なcopyingを行う場合、stackが長くなる</li>
+			<ul>
+				<li>
+					ex.) Fenichel-Yochelson's method(p.30 in ch.2)
+					<pre><code class="language-py">
+copy(P) = 
+	if atomic(P) or P == None
+		return P
+	if not forwarded(P)
+		n = size(P)
+		P' = free
+		free = free + n
+		temp = P[0]
+		forwading_address(P) = P'
+		P'[0] = copy(temp) # !!! recursive !!!
+		for i = 1 to n-1
+			P'[i] = copy(P[i]) # !!! recursive !!!
+					</code></pre>
+				</li>
+				<li>pointerのchainが長いと(≒ live objectがたくさんあると)困る</li>
+				<li>cf.) ch.4 Mark-sweep garbage collection: stack overflow(p.80)</li>
+			</ul>
+		</ul>
+	</div>
+	<p>再帰的なアルゴリズムを辞めたい => Cheney's copying collector</p>
+
+	<div id="6.1 Cheney's copying collector">
+		<h2>6.1 Cheney's copying collector</h2>
+
+		<div id="6.1.1 The tricolour abstraction">
+			<h3>6.1.1 The tricolour abstraction</h3>
+			<p>nodeの状態を3つの色で表現する</p>
+			<ul>
+				<li>Black: そのnode自身と子ノードが訪問済み</li>
+				<li>Grey: そのnode自身は訪問済み、子ノードは訪問途中</li>
+				<ul>
+					<li>(incremental GCやconcurrent programで、)collect中にmutatorによって参照関係が書き変わったときも</li>
+				</ul>
+				<li>White: 未訪問のノード</li>
+			</ul>
+			<p>
+				Garbage collection cycleが終わったとき: 全てのnodeがblack or white<br>
+				=> white nodeがgarbageとして扱われる
+			</p>
+		</div>
+
+		<div id="6.1.2 The algorithm &The example">
+			<h3>6.1.2 The algorithm & The example</h3>
+
+			<h4>戦略</h4>
+			<ul>
+				<li>(recursiveの問題点: 子node -> 孫nodeを訪問する)</li>
+				<li>未訪問の子node"のみ"をTospaceへcopy</li>
+				<li>Tospace内の、子nodeが未訪問なnode(= grey)を訪問</li>
+				<ul>
+					<li>grey nodeを見つけるために2つのpointerを使用</li>
+				</ul>
+			</ul>
+			
+			<h4>アルゴリズム</h4>
+			<div class="flex">
+				<div class="flex-left" style="margin-left: -20px;">
+					<div class="sticky">
+						<ol>
+							<li>scan pointerとfree pointerを、Tospaceのbottomを指させる</li>
+							<ul>
+								<li>scan pointer: 次にscanするnodeを指す(worklistの先頭)</li>
+								<li>free pointer: scan対象の新nodeを追加する場所を指す(worklistの末尾)</li>
+							</ul>
+							<li>全てのroot nodeをTospaceへコピー</li>
+							<ol>
+								<li>nodeのcopyをTospaceに作成</li>
+								<li>free pointerを移動</li>
+								<li>new nodeの色をgreyに塗る</li>
+								<li>new nodeがold nodeの参照先を指すようにする</li>
+								<li>old nodeのfirst fieldを、new nodeのアドレスで上書き</li>
+							</ol>
+							<li>scan pointerが指すnodeをscan</li>
+							<ol>
+								<li>target nodeの、全子nodeのうち、first fieldの参照先アドレスがFromspaceなものをcopy処理</li>
+								<!-- <li>target nodeの、全子nodeをcopy処理</li> -->
+								<li>target nodeを黒く塗る</li>
+								<li>scan pointerを移動</li>
+							</ol>
+							<li>scan pointer == free pointer (=>grey nodeが無くなるまで)3を繰り返し</li>
+						</ol>
+					</div>
+				</div>
+				<div class="flex-right">
+					<p>1.</p>
+					<img src="cheney1.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<p>2.</p>
+					<img src="cheney2.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<p>3.</p>
+					<div style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+						<img src="cheney3-1.svg" alt="" width="280px">
+						<img src="cheney3-2.svg" alt="" width="280px">
+						<details>
+							<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
+							<img src="cheney-extra.svg" alt="" width="280px">
+						</details>
+					</div>
+					<p>4.</p>
+					<img src="cheney4.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+				</div>
+			</div>
+
+			<h4>仮定:</h4>
+			<ul>
+				<li>全てのオブジェクトはheaderを持つ</li>
+				<li>オブジェクトの構成要素はheaderから発見可能</li>
+				<li>heap pointerはオブジェクトのheaderを指す(= internal pointerを持たない)</li>
+			</ul>
+		</div>
+	</div>
+
+	<div id="6.2 Cheap allocation">
+		<h2>6.2 Cheap allocation</h2>
+
+		<p>Copying algorithmの特徴:</p>
+		<ul>
+			<li>実装が簡単</li>
+			<ul>
+				<li>bitmapを使ったり...等の面倒がない</li>
+			</ul>
+			<li>様々な大きさのオブジェクトを処理可能</li>
+			<li>allocationがとても簡単で速い</li>
+			<ul>
+				<li>allocationは単にpointerの移動</li>
+				<li>空き容量の判定にはwrite-protection(cf. ch.4)等を利用可能</li>
+				<ul>
+					<li>(とあるarchitecture上では、faultのプロセッサへの通知が後回しにされるケースがあるので注意)</li>
+				</ul>
+			</ul>
+		</ul>
+	</div>
+
+	<div id="6.3 Multiple-area collection">
+		<h2>6.3 Multiple-area collection</h2>
+
+		<p>Copying methodが得意な場面・不得意な場面</p>
+		<ul>
+			<li>得意な場面</li>
+			<ul>
+				<li>小さいobject, 短命なobjectが多い</li>
+			</ul>
+			<li>不得意な場面</li>
+			<ul>
+				<li>大きいobject, 長命なobjectが多い(≒copyingが大変, copyingの回数が多い)</li>
+				<li>=> これらのobjectを特別に扱えば、もっと効率化できる</li>
+			</ul>
+		</ul>
+
+		<div id="6.3.1 Static areas">
+			<h3>6.3.1 Static areas</h3>
+			<ul>
+				<li>長命なobjectはstatic areaにallocateされることが多い</li>
+				<ul>
+					<li>tracingが必要になるが、copyingの移動対象としない方がいい</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="6.3.2 Large object areas">
+			<h3>6.3.2 Large object areas</h3>
+			<p>同様に、large objectも専用の領域にallocateする</p>
+			<ul>
+				<li>やり方:</li>
+				<ul>
+					<li>objectをheaderとbodyの2つに分解</li>
+					<ul>
+						<li>header: semi-spaceで管理</li>
+						<li>body: large object areaで管理</li>
+					</ul>
+				</ul>
+				<li>必要な追加コスト:</li>
+				<ul>
+					<li>(large objectの管理のため、)mark-sweep等の追加の手法が必要</li>
+				</ul>
+				<li>補足:</li>
+				<ul>
+					<li>large objectはstringやbitmap (image) dataであることが多い</li>
+					<ul>
+						<li>pointer fieldを持たない => scanが必要ない</li>
+						<li>large object areaで管理すれば、scanの(無駄な)操作をしなくて済む</li>
+					</ul>
+					<li>OSのサポートを受けられる場合、低コストでlarge objectを管理可能(かも)</li>
+					<ul>
+						<li>large object専用のpageを用意</li>
+						<li>そのpage全体をFromspace <-> Tospaceと切り替え</li>
+					</ul>
+				</ul>
+			</ul>
+			<p>「objectを複数の領域で管理する」アイデア => generational garbage collectionのアイデアに通じる(ch. 7)</p>
+		</div>
+
+		<div id="6.3.3 Incremental incrementally compacting garbage collection">
+			<h3>6.3.3 Incremental incrementally compacting garbage collection</h3>
+			<p>
+				heapを複数に分けると、他にもメリットがある<br>
+				=> 無駄な空間(semi-space)を小さくしつつ、compactingを可能になる
+			</p>
+			<ul>
+				<li>方針:</li>
+				<ul>
+					<li>heapを\(n+1\)個の領域に分解</li>
+					<li>うち2つの領域をFromspace, Tospaceとして扱う</li>
+					<li>残りはmark-sweepの管理対象</li>
+				</ul>
+				<li>collection処理の内容:</li>
+				<ul>
+					<li>Mark-sweep管理対象領域のobject -> mark</li>
+					<li>Fromspace内のobject -> Tospaceへコピー</li>
+					<ul>
+						<li>参照の付け替え, <strong>compacting</strong></li>
+					</ul>
+				</ul>
+				<li>(より上手く行う方法:)</li>
+				<ul>
+					<li>Mark-sweep対象内の処理するべきobject: stack(等)で管理</li>
+					<li>Copying対象内の処理するべきobject: (Tospace内の)queueで管理</li>
+					<li>Stackの高さを抑えるため、queue内のobjectを優先して処理したほうが良い</li>
+				</ul>
+				<li>(更なる改善案:)</li>
+				<ul>
+					<li>Fromspaceとmark-sweep spaceにまたがるobjectを許さない</li>
+					<ul>
+						<li>"Tospace size > Fromspace size"とする</li>
+						<li>Tospaceのサイズを動的に変化可能にする</li>
+					</ul>
+				</ul>
+			</ul>
+		</div>
+	</div>
+
+	<div id="6.4 Garbage collector efficiency">
+		<h2>6.4 Garbage collector efficiency</h2>
+		<p>
+			Garbage collectionを効率的に行いたい<br>
+			(非効率的 \(\equiv\) 回収されるcell数に対し、処理時間が長い)
+		</p>
+		<ul>
+			<li>回収されるcell数: \( \frac{M}{s} - R \)</li>
+			<ul>
+				<li>\(M\): semi-space容量</li>
+				<li>\(M\): cellの平均サイズ</li>
+				<li>\(M\): liveなcell数</li>
+			</ul>
+			<li>処理時間: \( cR \)</li>
+			<ul>
+				<li>\(c\): 1 live cell当たりの処理時間</li>
+			</ul>
+			<li>=> 回収される1 cell当たりの処理時間: \( \frac{cR}{\frac{M}{s} - R} \)</li>
+			<ul>
+				<li>Mが大きいほど小さくなる</li>
+				<li>理想 => (heap size):(live data size) = 7:1</li>
+			</ul>
+		</ul>
+	</div>
+
+</body>
+
+</html>
+
