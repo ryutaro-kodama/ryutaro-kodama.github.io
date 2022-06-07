@@ -71,3 +71,13 @@ img, svg {
 .ref-ng{
 	background-color: #ff0000b8;
 }
+
+
+/* クリック表示切替用 */
+.switch-active {
+	display: block;
+}
+
+.switch-disactive {
+	display: none;
+}

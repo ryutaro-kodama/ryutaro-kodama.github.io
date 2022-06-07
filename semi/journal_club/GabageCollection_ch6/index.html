@@ -9,6 +9,7 @@
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
 	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/script.js"></script>
 	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
@@ -138,8 +139,17 @@ copy(P) =
 							</ol>
 							<li>scan pointerが指すnodeをscan</li>
 							<ol>
-								<li>target nodeの、全子nodeのうち、first fieldの参照先アドレスがFromspaceなものをcopy処理</li>
-								<!-- <li>target nodeの、全子nodeをcopy処理</li> -->
+								<div class="switch">
+									<div class="switch-before">
+										<li>target nodeの、全子nodeをcopy処理</li>
+									</div>
+									<div class="switch-after">
+										<li>
+											<s>target nodeの、全子nodeをcopy処理</s><br>
+											target nodeの、全子nodeのうち、<strong>first fieldの参照先アドレスがFromspaceなもの</strong>をcopy処理
+										</li>
+									</div>
+								</div>
 								<li>target nodeを黒く塗る</li>
 								<li>scan pointerを移動</li>
 							</ol>
@@ -320,6 +330,10 @@ copy(P) =
 	</div>
 
 </body>
+
+<script>
+	initSwitch();
+</script>
 
 </html>
 
