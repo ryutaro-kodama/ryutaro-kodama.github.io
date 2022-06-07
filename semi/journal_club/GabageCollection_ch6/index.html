@@ -21,7 +21,7 @@
 	<div id="Introduction">
 		<h2>Copying Garbage Collectionとは何か</h2>
 
-		<h3>復習</h3>
+		<!-- <h3>復習</h3> -->
 
 		<h3>特徴</h3>
 		<ul>
@@ -120,59 +120,90 @@ copy(P) =
 			</ul>
 			
 			<h4>アルゴリズム</h4>
-			<div class="flex">
-				<div class="flex-left" style="margin-left: -20px;">
-					<div class="sticky">
-						<ol>
-							<li>scan pointerとfree pointerを、Tospaceのbottomを指させる</li>
-							<ul>
-								<li>scan pointer: 次にscanするnodeを指す(worklistの先頭)</li>
-								<li>free pointer: scan対象の新nodeを追加する場所を指す(worklistの末尾)</li>
-							</ul>
-							<li>全てのroot nodeをTospaceへコピー</li>
+			<div style="margin-left: -30px;">
+				<div class="flex" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<div class="flex-left">
+						<div class="sticky">
 							<ol>
-								<li>nodeのcopyをTospaceに作成</li>
-								<li>free pointerを移動</li>
-								<li>new nodeの色をgreyに塗る</li>
-								<li>new nodeがold nodeの参照先を指すようにする</li>
-								<li>old nodeのfirst fieldを、new nodeのアドレスで上書き</li>
+								<li>scan pointerとfree pointerを、Tospaceのbottomを指させる</li>
+								<ul>
+									<li>scan pointer: 次にscanするnodeを指す(worklistの先頭)</li>
+									<li>free pointer: scan対象の新nodeを追加する場所を指す(worklistの末尾)</li>
+								</ul>
 							</ol>
-							<li>scan pointerが指すnodeをscan</li>
-							<ol>
-								<div class="switch">
-									<div class="switch-before">
-										<li>target nodeの、全子nodeをcopy処理</li>
-									</div>
-									<div class="switch-after">
-										<li>
-											<s>target nodeの、全子nodeをcopy処理</s><br>
-											target nodeの、全子nodeのうち、<strong>first fieldの参照先アドレスがFromspaceなもの</strong>をcopy処理
-										</li>
-									</div>
-								</div>
-								<li>target nodeを黒く塗る</li>
-								<li>scan pointerを移動</li>
-							</ol>
-							<li>scan pointer == free pointer (=>grey nodeが無くなるまで)3を繰り返し</li>
-						</ol>
+						</div>
+					</div>
+					<div class="flex-right">
+						<img src="cheney1.svg" alt="" width="280px">
 					</div>
 				</div>
-				<div class="flex-right">
-					<p>1.</p>
-					<img src="cheney1.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
-					<p>2.</p>
-					<img src="cheney2.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
-					<p>3.</p>
-					<div style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
-						<img src="cheney3-1.svg" alt="" width="280px">
-						<img src="cheney3-2.svg" alt="" width="280px">
-						<details>
-							<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
-							<img src="cheney-extra.svg" alt="" width="280px">
-						</details>
+				
+				<div class="flex" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<div class="flex-left">
+						<div class="sticky">
+							<ol start="2">
+								<li>全てのroot nodeをTospaceへコピー</li>
+								<ol>
+									<li>nodeのcopyをTospaceに作成</li>
+									<li>free pointerを移動</li>
+									<li>new nodeの色をgreyに塗る</li>
+									<li>new nodeがold nodeの参照先を指すようにする</li>
+									<li>old nodeのfirst fieldを、new nodeのアドレスで上書き</li>
+								</ol>
+							</ol>
+						</div>
 					</div>
-					<p>4.</p>
-					<img src="cheney4.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<div class="flex-right">
+						<img src="cheney2.svg" alt="" width="280px">
+					</div>
+				</div>
+				
+				<div class="flex" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<div class="flex-left">
+						<div class="sticky">
+							<ol start="3">
+								<li>scan pointerが指すnodeをscan</li>
+								<ol>
+									<div class="switch">
+										<div class="switch-before">
+											<li>target nodeの、全子nodeをcopy処理</li>
+										</div>
+										<div class="switch-after">
+											<li>
+												<s>target nodeの、全子nodeをcopy処理</s><br>
+												target nodeの、全子nodeのうち、<strong>first fieldの参照先アドレスがFromspaceなもの</strong>をcopy処理
+											</li>
+										</div>
+									</div>
+									<li>target nodeを黒く塗る</li>
+									<li>scan pointerを移動</li>
+								</ol>
+							</ol>
+						</div>
+					</div>
+					<div class="flex-right" style="width: 300px;">
+						<div>
+							<img src="cheney3-1.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dotted #000000;">
+							<img src="cheney3-2.svg" alt="" width="280px">
+							<details>
+								<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
+								<img src="cheney-extra.svg" alt="" width="280px">
+							</details>
+						</div>
+					</div>
+				</div>
+				
+				<div class="flex" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
+					<div class="flex-left">
+						<div class="sticky">
+							<ol start="4">
+								<li>scan pointer == free pointer (=>grey nodeが無くなるまで)3を繰り返し</li>
+							</ol>
+						</div>
+					</div>
+					<div class="flex-right">
+						<img src="cheney4.svg" alt="" width="280px">
+					</div>
 				</div>
 			</div>
 
