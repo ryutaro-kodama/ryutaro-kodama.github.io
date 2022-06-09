@@ -21,18 +21,18 @@
 	<div id="Introduction">
 		<h2>Copying Garbage Collectionとは何か</h2>
 
-		<!-- <h3>復習</h3> -->
+		<h3>Copying Garbage Collection</h3>
+		<ul>
+			<li>heapをFromspaceとTospaceに区切り、live dataのみをcompactionしながら移動させる</li>
+			<ul>
+				<li><img src="review_copying.svg" alt="" width="500px"></li>
+			</ul>
+		</ul>
 
 		<h3>特徴</h3>
 		<ul>
-			<li>write時にoverheadが(ほぼ)ない</li>
-			<ul>
-				<li>pointerの移動のみ</li>
-			</ul>
-			<li>copyingのコストはlive dataの量に依存</li>
-			<ul>
-				<li>heapの大きさには依存しない</li>
-			</ul>
+			<li>Garbage Collectionのコストはlive dataの量に依存</li>
+			<li>live dataを"compactionしながら移し替える"</li>
 			<li>この手法に基づいてより効率的な手法を実装するのが楽</li>
 			<ul>
 				<li>cf.) incremental GC, genarative GC </li>
@@ -41,14 +41,13 @@
 			<ul>
 				<li>使わないsemi-space領域をストレージ上に退避できる</li>
 			</ul>
-			<li>live dataを"compactionしながら移し替える"</li>
 		</ul>
 
-		<h3>"compactionしながら移し替える"メリット</h3>
+		<h3>"compactionしながら移動させる"メリット</h3>
 		<ul>
-			<li>heap -> "push only stack"とできる</li>
+			<li>allocation操作 = pointerの移動</li>
 			<ul>
-				<li>allocationが単にpointerの増加操作とできる</li>
+				<li>overheadがほぼない</li>
 			</ul>
 			<li>様々な大きさのobjectも一律なコストでallocateできる</li>
 			<ul>
@@ -83,8 +82,16 @@ copy(P) =
 				<li>cf.) ch.4 Mark-sweep garbage collection: stack overflow(p.80)</li>
 			</ul>
 		</ul>
+		<p>再帰的なアルゴリズムを辞めたい => Cheney's copying collector</p>
+
+		<h3>章立て</h3>
+		<ul>
+			<li>6.1 Cheney's copying collector</li>
+			<li>6.2 Cheap allocation</li>
+			<li>6.3 Multiple-area collection</li>
+			<li>6.4 Garbage collector efficiency</li>
+		</ul>
 	</div>
-	<p>再帰的なアルゴリズムを辞めたい => Cheney's copying collector</p>
 
 	<div id="6.1 Cheney's copying collector">
 		<h2>6.1 Cheney's copying collector</h2>
@@ -101,8 +108,18 @@ copy(P) =
 				<li>White: 未訪問のノード</li>
 			</ul>
 			<p>
-				Garbage collection cycleが終わったとき: 全てのnodeがblack or white<br>
-				=> white nodeがgarbageとして扱われる
+				Garbage collection cycleが終わったとき: 全てのnodeが
+				<span class="switch">
+					<span class="switch-before switch-quiz-question">何色？</span>
+					<span class="switch-after switch-quiz-answer">black or white</span>
+				</span>
+				<br>
+				=> 
+				<span class="switch">
+					<span class="switch-before switch-quiz-question">何色？</span>
+					<span class="switch-after switch-quiz-answer">white</span>
+				</span>
+				 nodeがgarbageとして扱われる
 			</p>
 		</div>
 
@@ -158,38 +175,59 @@ copy(P) =
 					</div>
 				</div>
 				
-				<div class="flex" style="padding-bottom: 10px; border-bottom: 1px dashed #000000;">
-					<div class="flex-left">
-						<div class="sticky">
-							<ol start="3">
-								<li>scan pointerが指すnodeをscan</li>
-								<ol>
-									<div class="switch">
-										<div class="switch-before">
-											<li>target nodeの、全子nodeをcopy処理</li>
+				<div style="border-bottom: 1px dashed #000000;">
+					<div class="flex" style="padding-bottom: 10px; ">
+						<div class="flex-left">
+							<div class="sticky">
+								<ol start="3">
+									<li>scan pointerが指すnodeをscan</li>
+									<ol>
+										<div class="switch">
+											<div class="switch-before">
+												<li>target nodeの、全子nodeをcopy処理</li>
+											</div>
+											<div class="switch-after">
+												<li>
+													<s>target nodeの、全子nodeをcopy処理</s><br>
+													target nodeの、全子nodeのうち、<strong>first fieldの参照先アドレスがFromspaceなもの</strong>をcopy処理
+												</li>
+												<ul>
+													<li>参照先がTospace: そのnodeを指すようにする</li>
+												</ul>
+											</div>
 										</div>
-										<div class="switch-after">
-											<li>
-												<s>target nodeの、全子nodeをcopy処理</s><br>
-												target nodeの、全子nodeのうち、<strong>first fieldの参照先アドレスがFromspaceなもの</strong>をcopy処理
-											</li>
-										</div>
-									</div>
-									<li>target nodeを黒く塗る</li>
-									<li>scan pointerを移動</li>
+										<li>target nodeを黒く塗る</li>
+										<li>scan pointerを移動</li>
+									</ol>
 								</ol>
-							</ol>
+							</div>
+						</div>
+						<div class="flex-right" style="width: 350px;">
+							<div>
+								<img src="cheney3-1.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dotted #000000;">
+								<img src="cheney3-2.svg" alt="" width="280px">
+							</div>
 						</div>
 					</div>
-					<div class="flex-right" style="width: 300px;">
-						<div>
-							<img src="cheney3-1.svg" alt="" width="280px" style="padding-bottom: 10px; border-bottom: 1px dotted #000000;">
-							<img src="cheney3-2.svg" alt="" width="280px">
-							<details>
-								<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
-								<img src="cheney-extra.svg" alt="" width="280px">
-							</details>
-						</div>
+					
+					<div style="margin-bottom: 30px;">
+						<details>
+							<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
+							<div class="flex">
+								<div class="flex-left">
+									<ul>
+										<li>Fromspace内nodeのfirst fieldが指すもの</li>
+										<ul>
+											<li>そのnodeが未処理: Fromspace内のnode</li>
+											<li>そのnodeが処理済: Tospace内のnode</li>
+										</ul>
+									</ul>
+								</div>
+								<div class="flex-right" style="width: 350px;">
+									<img src="cheney-extra.svg" alt="" width="280px">
+								</div>
+							</div>
+						</details>
 					</div>
 				</div>
 				
@@ -256,7 +294,7 @@ copy(P) =
 		<div id="6.3.1 Static areas">
 			<h3>6.3.1 Static areas</h3>
 			<ul>
-				<li>長命なobjectはstatic areaにallocateされることが多い</li>
+				<li>長命なobjectはstatic areaにallocateしてしまう</li>
 				<ul>
 					<li>tracingが必要になるが、copyingの移動対象としない方がいい</li>
 				</ul>
@@ -308,13 +346,14 @@ copy(P) =
 					<li>heapを\(n+1\)個の領域に分解</li>
 					<li>うち2つの領域をFromspace, Tospaceとして扱う</li>
 					<li>残りはmark-sweepの管理対象</li>
+					<li><img src="incremental.svg" alt="" width="400px"></li>
 				</ul>
 				<li>collection処理の内容:</li>
 				<ul>
 					<li>Mark-sweep管理対象領域のobject -> mark</li>
 					<li>Fromspace内のobject -> Tospaceへコピー</li>
 					<ul>
-						<li>参照の付け替え, <strong>compacting</strong></li>
+						<li>参照の付け替え, <strong>compacting</strong>が行われる</li>
 					</ul>
 				</ul>
 				<li>(より上手く行う方法:)</li>
@@ -342,21 +381,37 @@ copy(P) =
 			(非効率的 \(\equiv\) 回収されるcell数に対し、処理時間が長い)
 		</p>
 		<ul>
-			<li>回収されるcell数: \( \frac{M}{s} - R \)</li>
+			<li>回収されるcell数: 
+				<span class="switch">
+					<span class="switch-before switch-quiz-question">数式</span>
+					<span class="switch-after switch-quiz-answer">\( \frac{M}{s} - R \)</span>
+				</span>
+			</li>
 			<ul>
 				<li>\(M\): semi-space容量</li>
-				<li>\(M\): cellの平均サイズ</li>
-				<li>\(M\): liveなcell数</li>
+				<li>\(s\): cellの平均サイズ</li>
+				<li>\(R\): liveなcell数</li>
 			</ul>
-			<li>処理時間: \( cR \)</li>
+			<li>処理時間:
+				<span class="switch">
+					<span class="switch-before switch-quiz-question">数式</span>
+					<span class="switch-after switch-quiz-answer">\( cR \)</span>
+				</span>
+			</li>
 			<ul>
 				<li>\(c\): 1 live cell当たりの処理時間</li>
 			</ul>
-			<li>=> 回収される1 cell当たりの処理時間: \( \frac{cR}{\frac{M}{s} - R} \)</li>
+			<li>=> 回収される1 cell当たりの処理時間:
+				<span class="switch">
+					<span class="switch-before switch-quiz-question">数式</span>
+					<span class="switch-after switch-quiz-answer">\( \frac{cR}{\frac{M}{s} - R} \)</span>
+				</span>
+			</li>
 			<ul>
-				<li>Mが大きいほど小さくなる</li>
+				<li>(Rが一定の場合、)Mが大きいほど小さくなる</li>
 				<li>理想 => (heap size):(live data size) = 7:1</li>
 			</ul>
+			<li><img src="efficiency_graph.svg" alt="" width="500px"></li>
 		</ul>
 	</div>
 
