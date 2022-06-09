@@ -8,16 +8,11 @@ function switchContents(e) {
 		if (clickedTarget == null) return;
 	}
 
-	let switchedTarget;
-	if (clickedTarget.className.includes("switch-before")) {
-		switchedTarget = clickedTarget.parentElement.getElementsByClassName("switch-after")[0];
-	} else {
-		switchedTarget = clickedTarget.parentElement.getElementsByClassName("switch-before")[0];
-	}
+	disactiveTarget = clickedTarget.parentElement.getElementsByClassName("switch-disactive")[0];
 
     // 表示クラスの切り替え
 	clickedTarget.classList.replace("switch-active", "switch-disactive");
-	switchedTarget.classList.replace("switch-disactive", "switch-active");
+	disactiveTarget.classList.replace("switch-disactive", "switch-active");
 }
 
 function initSwitch() {

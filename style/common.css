@@ -75,9 +75,22 @@ img, svg {
 
 /* クリック表示切替用 */
 .switch-active {
-	display: block;
+	display: inline-block;
 }
 
 .switch-disactive {
 	display: none;
+}
+
+
+/* クリッククイズ表示切替用 */
+.switch-quiz-question {
+	color: red;
+	font-weight: bold;
+	border: 1px solid red;
+}
+
+.switch-quiz-answer {
+	font-weight: bold;
+	border: 1px solid red;
 }
