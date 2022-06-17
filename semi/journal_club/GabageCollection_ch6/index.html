@@ -212,7 +212,7 @@ copy(P) =
 					
 					<div style="margin-bottom: 30px;">
 						<details>
-							<summary>既にcopy済みのobjectを参照していたらどうなるの?</summary>
+							<summary>※既にcopy済みのobjectを参照していたらどうなるの?</summary>
 							<div class="flex">
 								<div class="flex-left">
 									<ul>
@@ -244,6 +244,51 @@ copy(P) =
 					</div>
 				</div>
 			</div>
+
+			<h4>アルゴリズム:</h4>
+			<div class="flex">
+				<div class="flex-left">
+					<pre><code class="language-py">
+flip() =
+	# STEP1
+	Fromspace, Tospace = Tospace, Fromspace
+	top_of_space = Tospace + SPACE_SIZE
+	scan = free = Tospace
+
+	# STEP2
+	for R in Roots:
+		# rootの指し先をcopy後objectで置き換え
+		R = copy(R)
+
+	# STEP3
+	while scan < free:
+		for P in children(scan):
+			# scan対象の子ノードを
+			# copy後objectで置き換え
+			*P = copy(*P)
+		scan = scan + size(scan)
+					</code></pre>
+				</div>
+				<div class="flex-right">
+					<pre><code class="language-py">
+copy(P) = 
+	if is_copyed(P)
+		# copy前objectのfirst fieldを参照
+		return forwarding_address(P)
+	else
+		new_addr = free
+		move(P, free)
+		free = free + size(P)
+		forwarding_address(P) = new_addr
+		return new_addr
+					</code></pre>
+				</div>
+			</div>
+			<ul>
+				<li>全てのオブジェクトはheaderを持つ</li>
+				<li>オブジェクトの構成要素はheaderから発見可能</li>
+				<li>heap pointerはオブジェクトのheaderを指す(= internal pointerを持たない)</li>
+			</ul>
 
 			<h4>仮定:</h4>
 			<ul>
