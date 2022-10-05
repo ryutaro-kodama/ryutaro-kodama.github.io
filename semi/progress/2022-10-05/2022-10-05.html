@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>2022-10-05</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+
+  <h1>進捗報告(10/05)</h1>
+
+	<h2>今日の内容</h2>
+	<ul>
+		<li>卒論研究(PyPSTA)の実装・実験状況</li>
+		<li>修論研究の提案手法について</li>
+		<li>現状のTODO</li>
+	</ul>
+
+	<div id="卒論研究(PyPSTA)の実装・実験状況">
+		<h2>卒論研究(PyPSTA)の実装・実験状況</h2>
+		<p>PyPSTA: backward解析を使って、path-sensitiveで効率的なbackward解析の実現を目指す</p>
+		<p>Ariadne(WALAをベースとした静的解析フレームワーク)上に実装</p>
+
+		<div id="背景・解決したい問題">
+			<h3>背景・解決したい問題</h3>
+			<ul>
+				<li>背景</li>
+				<ul>
+					<li>動的型付け言語に対する静的解析は難しい</li>
+					<li>精度を良くしようとすると(path-sensitiveに行おうとすると)状態爆発が起きやすい</li>
+					<ul>
+						<li>path-sensitive: 解析結果をpath 1つ1つの粒度で解析を行いたい</li>
+					</ul>
+				</ul>
+				<li>解決したい問題</li>
+				<ul>
+					<li>Pythonプログラムに対する既存の静的型解析器は精度が悪い</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="PyPSTA: Motivating Example">
+			<h3>PyPSTA: Motivating Example</h3>
+
+			<div>
+				<pre><code class="language-py line-numbers">
+# mypy/stubgenc.py
+
+def generate_c_function_stub(..., sigs = None, ...) -> None:
+	if sigs is None:
+		sigs = {}
+
+	...
+
+	sigs.get('name')    # FP: 'NoneType' doesn't has attribute 'get'.
+				</code></pre>
+				<pre><code class="language-py line-numbers">
+# pyperformance/bm_raytrace/run_benchmark.py
+
+class Vector(object):
+	def __init__(self, initx, inity, initz):
+		self.x = initx
+		self.y = inity
+		self.z = initz
+
+	def isPoint(self):
+		return False
+
+	def normalized(self):
+		...
+
+class Point(object):
+	def __init__(self, initx, inity, initz):
+		self.x = initx
+		self.y = inity
+		self.z = initz
+
+	def __sub__(self, other):
+		if other.isPoint():
+			return Vector(self.x - other.x, self.y - other.y, self.z - other.z)
+		else:
+			return Point(self.x - other.x, self.y - other.y, self.z - other.z)
+
+	def isPoint(self):
+		return True
+
+p1 = Point(...)
+p2 = Point(...)
+normalized_vec = (p1 - p2).normalized()
+  # FP: 'Point' doesn't has attribute 'normalized'.
+				</code></pre>
+			</div>
+		</div>
+
+		<div id="提案手法">
+			<h3>提案手法</h3>
+			
+			<ul>
+				<li>forward解析とbackward解析の組み合わせで行う</li>
+				<ul>
+					<li>forward解析:</li>
+					<ul>
+						<li>path-insensitiveな解析を行い、型の候補を絞る役割</li>
+					</ul>
+					<li>backward解析:</li>
+					<ul>
+						<li>得られた型の候補が正しいか、path毎に確認する役割</li>
+					</ul>
+				</ul>
+			</ul>
+
+			<div>
+				<h4>backward解析の具体例</h4>
+				<div class="flex">
+					<div class="flex-left">
+						<p>仮定(11行目の<code class="language-py">sigs</code>変数は<code class="language-py">None</code>型)の下、各実行パス毎に遡り、矛盾がないか確認</p>
+						<ul>
+							<li>L8からif文の中を通る場合: L7で<code class="language-py">sigs</code>に<code class="language-py">Dict</code>が代入されるので矛盾</li>
+							<li>L8からif文の中を通らない場合: L6の条件で<code class="language-py">not (sigs is None)</code>に矛盾</li>
+						</ul>
+						<p>全ての実行パスで矛盾が起こったので、<code class="language-py">sigs</code>変数は<code class="language-py">None</code>型を持ちえない(refute)ことが分かる</p>
+					</div>
+					<div class="flex-right">
+						<div class="sticky">
+							<pre><code class="language-py line-numbers">
+# mypy/stubgenc.py
+
+generate_c_function_stub()
+
+def generate_c_function_stub(sigs = None):
+	if sigs is None:
+		sigs = {}
+
+	...
+
+	sigs.get('name')  # FP
+							</code></pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="PyPSTAで行ったこと">
+			<h3>PyPSTAで行ったこと</h3>
+
+			<ul>
+				<!-- <li>backward解析を使った、path-sensitiveで効率的なbackward解析の実現</li>
+				<ul>
+					<li>既存研究ではなかったpath-sensitiveなbackward静的型解析を行う</li>
+					<li>静的型解析分野におけるbackward解析の有用性の確認</li>
+				</ul> -->
+				<li>TAJS[SAS '08]の既存手法をPythonへ適用、限界の確認</li>
+				<ul>
+					<li>TAJS: JavaScriptを対象とした型解析手法。path-sensitivityなし</li>
+					<li><b>TAJSの既存手法では不正確(FP)が発生することの確認</b></li>
+					<li><b>TAJSの既存手法では解析ができないPython文法があることを確認</b></li>
+				</ul>
+				<li>Thresher[]の提案手法(backward解析)をPython・型解析へ適用</li>
+				<ul>
+					<li>Thresher: Javaに対するpointer解析で、backward解析を採用することでpath-sensitivityを獲得</li>
+					<li><b>Thresherの理論の単純適用では上手くいかない部分(loopの解析)があることの確認</b></li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="TAJS[SAS '08]の提案手法をPythonへ適用、限界の確認">
+			<h3>TAJS[SAS '08]の提案手法をPythonへ適用、限界の確認</h3>
+
+			<div id="解析の形式定義">
+				<h4>解析の形式定義</h4>
+				<p>pass</p>
+			</div>
+			
+			<div id="TAJSで上手くいかないところ">
+				<h4>TAJSで上手くいかないところ</h4>
+
+				<p>本質的な限界はないが、単純適用では対応できないPython上の文法がある</p>
+				<ul>
+					<li>内包表記</li>
+					<ul>
+						<li>(Ariadneにバグがあるので)検体をfor文の形に直すことで対応</li>
+					</ul>
+					<li>可変長引数、keyword引数</li>
+					<li>クラス内特殊メソッド</li>
+					<ul>
+						<li>四則演算等のstatementで関数呼び出し</li>
+					</ul>
+				</ul>
+			</div>
+		</div>
+
+		<div id="Thresher[]の提案手法(backward解析)をPython・型解析へ適用">
+			<h3>Thresher[]の提案手法(backward解析)をPython・型解析へ適用</h3>
+
+			<div id="backward解析の形式定義">
+				<h4>backward解析の形式定義</h4>
+				
+				<p>pass</p>
+			</div>
+
+			<div id="loop中のbackward解析の再定義">
+				<h4>loop中のbackward解析の再定義</h4>
+
+				<p>Thresherの実装の単純適用では、型解析を対象としたbackward解析がloop中で上手くいかない</p>
+				<ul>
+					<li>Thresherでのloop解析の定義</li>
+					<ul>
+						<li>静的解析なので、loopを何周すればいいのか分からない</li>
+						<ul>
+							<li>loopを1周した場合、2周した場合、と場合分けするのは不可能</li>
+						</ul>
+						<li><b>loop前での制約が、loopをn周(n=1, 2, ...)した場合全てを含むような制約にしたい</b></li>
+						<ul>
+							<li><b>loopを何度も繰り返して、制約のfix pointが欲しい</b></li>
+						</ul>
+						<li>Thresherで集めている制約は2種類ある</li>
+						<ul>
+							<li>Path constraint: 「ある変数の値とある変数の値が等しい」という制約</li>
+							<li>Points-to constraint: 「ある変数がある変数(object)を指している」という制約</li>
+							<li>
+								<pre><code class="language-java line-numbers">
+public void func() {
+	while (...) {
+		x.y = z;  // Points-to
+
+		if (x.i == 5) {  // Path
+			...
+		}
+	}
+}
+								</code></pre>
+							</li>
+						</ul>
+						<li><b>loop中ではPoints-to constraintのみを集める</b></li>
+						<ul>
+							<li><b>loop前での制約が、本来あるべき制約より緩ければOK(FNが無くなる)</b></li>
+						</ul>
+						<ul>
+							<li>Path constraintを集め続けると、fix pointを求めるのが大変(だと思われる)</li>
+							<ul>
+								<li>
+									<div class="flex">
+										<div style="width: 300px;">
+											<pre><code class="language-java line-numbers">
+public void func() {
+	while (...) {
+		i = i + 1;
+
+		if (i == 5) {  // Path
+			...
+		}
+	}
+}
+											</code></pre>
+										</div>
+										<div class="">
+											<ul>
+												<li>1回目の5行目実行後の制約:</li>
+												<ul>
+													<li>\(\texttt{i == 5}\)</li>
+												</ul>
+												<li>1回目の3行目実行後の制約:</li>
+												<ul>
+													<li>\(\texttt{i == 5} \land \texttt{i == i' + 1}\)</li>
+												</ul>
+												<li>2回目の5行目実行後の制約:</li>
+												<ul>
+													<li>
+														\(\texttt{i == 5} \land \texttt{i == i' + 1} \land \texttt{i' == 5}\)<br>
+														\(= \texttt{i' == 4} \land \texttt{i' == 5}\)<br>
+														\(= \texttt{False}\)<br>
+													</li>
+												</ul>
+											</ul>
+										</div>
+									</div>
+								</li>
+								<li>(int値のみならwidning等を使えば何とかなりそうだが、かなり大変そう)</li>
+							</ul>
+							<li>Points-to constraintは、いつかはfix pointに到達する</li>
+							<ul>
+								<li>(変数とオブジェクトの数が有限なため(?))</li>
+							</ul>
+						</ul>
+					</ul>
+					<li>PyPSTAでのloop解析の定義</li>
+					<ul>
+						<li>Thresherで集めている制約は2種類ある</li>
+						<ul>
+							<li>Path constraint: 「ある変数の値とある変数の値が等しい」という制約</li>
+							<li>Type constraint: 「ある変数の型とある変数の型が等しい」という制約</li>
+						</ul>
+						<li>loop中ではType constraintのみ集めるようにする</li>
+						<ul>
+							<li>
+								<div class="flex">
+									<div style="width: 250px;">
+										<pre><code class="language-py line-numbers">
+while ...:
+	i = i + 1;
+
+	if i == 5:  # Path
+		...
+										</code></pre>
+									</div>
+									<div class="">
+										<ul>
+											<li>1回目の5行目実行後の制約:</li>
+											<ul>
+												<li>\(\texttt{i == int}\)</li>
+											</ul>
+											<li>1回目の3行目実行後の制約:</li>
+											<ul>
+												<li>
+													\(\texttt{i == int} \land \texttt{i == i' + 1}\)<br>
+													\(= \texttt{i' + 1 == int}\)<br>
+													\(= \texttt{i' == int}\)<br>
+												</li>
+											</ul>
+										</ul>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</ul>
+				</ul>
+			</div>
+		</div>
+
+		<div id="PyPSTAの実験結果">
+			<h3>PyPSTAの実験結果</h3>
+			<ul>
+				<li>プロセッサ: Intel(R) Core(TM) i7-1065G7 CPU @ 1.30GHz   1.50 GHz</li>
+				<li>メモリ: 32.0GB</li>
+				<li>OS: Windows 10 Home</li>
+			</ul>
+			<ul>
+				<li>以下の検体は全て既存研究[ECOOP '20]で使用されていたもののみ記載</li>
+				<li>他にも複数の合成検体を作成</li>
+				<li>backward解析の起点は「forward解析でエラーが起こったstatement」</li>
+			</ul>
+			<table border="1" align="center" style="text-align: center;">
+				<thead>
+					<th>name</th>
+					<th>LOC</th>
+					<th>解析時間: 提案手法</th>
+					<th>解析時間: ECCOP 2020</th>
+					<th>FP: forward</th>
+					<th>FP: backward</th>
+					<th>合成/リアル</th>
+				</thead>
+				<tbody>
+					<tr>
+						<td>isinstance_test.py</td>
+						<td>3</td>
+						<td>1343 ms</td>
+						<td>40 ms</td>
+						<td>1</td>
+						<td>0</td>
+						<td>合成</td>
+					</tr>
+					<tr>
+						<td>mutation.py</td>
+						<td>12</td>
+						<td>1360 ms</td>
+						<td>34 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>合成</td>
+					</tr>
+					<tr>
+						<td>disjoint_sets.py</td>
+						<td>45</td>
+						<td>2082 ms</td>
+						<td>59 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<!-- <tr>
+						<td>functions.py</td>
+						<td>58</td>
+						<td>-</td>
+						<td>39 ms</td>
+						<td>-</td>
+						<td>-</td>
+						<td>リアル</td>
+					</tr> -->
+					<tr>
+						<td>bm_fannkuch.py</td>
+						<td>59</td>
+						<td>1627 ms</td>
+						<td>76 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bellman_ford.py</td>
+						<td>62</td>
+						<td>1649 ms</td>
+						<td>240 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_float.py</td>
+						<td>63</td>
+						<td>8878 ms</td>
+						<td>82 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>coop_concatenate.py</td>
+						<td>64</td>
+						<td>1520 ms</td>
+						<td>43 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_spectral_norm.py</td>
+						<td>74</td>
+						<td>1574 ms</td>
+						<td>320 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>crafting_challenge.py</td>
+						<td>132</td>
+						<td>1956 ms</td>
+						<td>480 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_nbody.py</td>
+						<td>157</td>
+						<td>2311 ms</td>
+						<td>1400 ms</td>
+						<td>0</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_chaos.py</td>
+						<td>309</td>
+						<td>9098 ms</td>
+						<td>2300 ms</td>
+						<td>3</td>
+						<td>1(注1)</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_raytrace.py</td>
+						<td>409</td>
+						<td>1500 ms</td>
+						<td>12505 ms</td>
+						<td>1</td>
+						<td>0</td>
+						<td>リアル</td>
+					</tr>
+					<tr>
+						<td>bm_scimark.py</td>
+						<td>415</td>
+						<td>- ms</td>
+						<td>550 ms</td>
+						<td>-</td>
+						<td>-</td>
+						<td>リアル</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div id="注1">
+			<h3>注1</h3>
+			<pre><code class="language-py">
+def GetIndex(self, u):
+	dom = self.GetDomain()
+	it = iter(...)
+	x = next(it, None)
+	while x is not None:
+		if u >= self.knots[x] and u < self.knots[x + 1]:
+			# xはNoneであり得ない
+			...
+		x = next(it, None)
+	else:
+		I = dom[1] - 1
+	return I
+	# 実行するとIはNoneではあり得ない
+			</code></pre>
+		</div>
+
+		<div id="注2">
+			<h3>注2</h3>
+			<p>Ariadne上では、`l[x]`と`l.x`が同じ命令に変換される。これによる解析エラー</p>
+			<pre><code class="language-py">
+class Array2D(object):
+	def __init__(self, w):
+		self.width = w  # self[width]として扱ってしまう
+
+	def __setitem__(self, x_y, val):
+		(x, y) = x_y
+		self.data[self._idx(x, y)] = val
+
+array = Array2D(2)
+			</code></pre>
+		</div>
+
+	</div>
+	
+	<div id="修論研究の提案手法について">
+		<h2>修論研究の提案手法について</h2>
+		<p>修論テーマ: 動的型付言語を対象とする正確な型解析に基づく手続き間制御フロー解析とその応用</p>
+		<ul>
+			<li>目標:</li>
+			<ul>
+				<li>上記のPyPSTAを用いて、正確な型解析結果を基に、正確なコールグラフを作成する</li>
+			</ul>
+			<li>課題:</li>
+			<ul>
+				<li>Call graph解析では高速な解析が求められる</li>
+				<ul>
+					<li>Backward解析を悠長にやってはいられない</li>
+				</ul>
+			</ul>
+			<li>どのようにして課題を解決するか:</li>
+			<ol>
+				<li>効率的な場所にのみbackward解析を行う</li>
+				<ul>
+					<li>関数call場所のみ(とか)</li>
+				</ul>
+				<li>def-use解析を使って、backward解析を効率的に行う</li>
+			</ol>
+		</ul>
+
+		<div id="def-use解析を使って、backward解析を効率的に行う">
+			<h3>def-use解析を使って、backward解析を効率的に行う</h3>
+
+			<ul>
+				<li>方針: 現状の制約に影響を与えないstatementは無視する</li>
+				<li><img src="def-use1.png" alt="" width="500px"></li>
+				<li><img src="def-use2.png" alt="" width="500px"></li>
+				<ul>
+					<li>a.を繰り返し適用することで、余計なパスの分岐も抑制できそう</li>
+				</ul>
+			</ul>
+		</div>
+
+		<div id="実験計画">
+			<h3>実験計画</h3>
+			<ol>
+				<li>既存手法と比べ精度はどの程度高いか</li>
+				<ul>
+					<li>解析結果のcall graph edgeをFP, FN等に分類</li>
+					<li>precision, recallの値で比較</li>
+				</ul>
+				<li>既存手法と比べ速度はどの程度遅いか</li>
+				<ul>
+					<li>検体を静的に解析する時間を計測・比較</li>
+				</ul>
+				<li>backward解析は静的call graph解析にどの程度有効か</li>
+				<ul>
+					<li>1つのcall地点からのcalleeの解析結果個数を計測</li>
+					<li>backward解析の有無で比較</li>
+				</ul>
+				<li>backward解析でのdef-use解析の使用は有用か</li>
+				<ul>
+					<li>backward解析での訪問statement数とパス数を計測</li>
+					<li>def-use解析の利用の有無で比較</li>
+				</ul>
+			</ol>
+			<ul>
+				<li><b>+α</b>: backward解析とcall graph解析が相性がいいことの証明</li>
+				<ul>
+					<li>backward解析: demand-drivenな形で解析を行うことができる</li>
+					<li>call graph解析: call地点で正確な型が欲しい</li>
+				</ul>
+			</ul>
+		</div>
+	</div>
+
+	<div id="現状のTODO">
+		<h2>現状のTODO</h2>
+		
+		<ul>
+			<li>より大規模な検体の対応</li>
+			<ul>
+				<li>~10月中旬: ~2k</li>
+				<li>~10月下旬: ~3k</li>
+			</ul>
+			<li>def-use解析を利用したbackward解析の実装</li>
+			<ul>
+				<li>~11月末</li>
+			</ul>
+			<li>関連研究論文読み</li>
+			<ul>
+				<li>月に3~4本</li>
+			</ul>
+		</ul>
+	</div>
+
+</body>
+
+</html>
