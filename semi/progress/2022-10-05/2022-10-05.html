@@ -515,6 +515,7 @@ def GetIndex(self, u):
 class Array2D(object):
 	def __init__(self, w):
 		self.width = w  # self[width]として扱ってしまう
+		self.data = ...
 
 	def __setitem__(self, x_y, val):
 		(x, y) = x_y
