@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/heading.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/common.css" />
+	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
+	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header><a href="https://ryutaro-kodama.github.io/slides">＜ トップページへ戻る</a></header>
+  <h1>NoCFG[SAS '22]</h1>
+  <p>NoCFG: A Lightweight Approach for Sound Call Graph Approximation</p>
+
+  <div id="概要">
+    <h2>概要</h2>
+    <ul>
+      <li>ブログラム全体の解析にはinterproceduralな解析が必要</li>
+      <ul>
+        <li>正確なCGの作成(解析)が、正確な解析の手助けとなる</li>
+      </ul>
+      <li>現在のCG解析器は、正確な解析のためにプログラムの複雑な依存関係を追う</li>
+      <ul>
+        <li>Scalabilityの減少</li>
+      </ul>
+      <li>NoCFG:</li>
+      <ul>
+        <li>ApproximateなCGをscalableに作成</li>
+        <li>Key property:</li>
+        <ul>
+          <li>CG作成に必要な部分だけを残し、プログラム自体を(粗く)抽象化(中間表現化)</li>
+          <li>-> 様々な種類のプログラミング言語を簡単にサポート可能</li>
+        </ul>
+      </ul>
+      <li>実験:</li>
+      <ul>
+        <li>PythonとC#でリアル検体実験を行う</li>
+        <ul>
+          <li>90%近くのpresicion</li>
+          <li>2M行のコードの解析が可能</li>
+        </ul>
+      </ul>
+    </ul>
+  </div>
+
+  <div id="Introduction">
+    <h2>Introduction</h2>
+
+    <div id="CG解析について">
+      <h3>CG解析について</h3>
+      <ul>
+        <li>Call Graph: 手続き間の呼び出し関係をグラフ化したもの</li>
+        <li>Soundness: 不足しているedgeは存在しない</li>
+        <ul>
+          <li>ただしこの論文でのsoundnessは必ずしも完璧なsoundnessを意味しない</li>
+          <ul>
+            <li>(コーナーケース等によっては、未対応であったりして、soundでない場合もある)</li>
+          </ul>
+          <li>State of the Artな解析器でも、soundと言いつつsoundでないものはある</li>
+          <ul>
+            <li>ex.) WALA, SOOT</li>
+          </ul>
+        </ul>
+        <li>主なCG解析アプローチ</li>
+        <ul>
+          <li>Points-to analysis</li>
+          <ul>
+            <li>欠点: Scalabilityが低い</li>
+            <ul>
+              <li>正確な解析points-to analysisは、複雑なcontrol-flowの解析や、(同じ型でも)インスタンスの区別が必要</li>
+            </ul>
+          </ul>
+          <li>Name-based</li>
+          <ul>
+            <li>欠点: 関数型言語(第一級関数)では正確な解析ができない</li>
+          </ul>
+          <li>(静的型付け言語)</li>
+          <ul>
+            <li>Receiverオブジェクトの型を、static typeからconservativeに解析することで、高速でsoundなCG解析が可能</li>
+          </ul>
+        </ul>
+        <li>現状の問題点:</li>
+        <ul>
+          <li>Pythonのような、動的型付け言語で、関数型言語の性質を持つプログラミング言語では、正確で高速な解析が難しい</li>
+          <li>
+            <pre><code class="language-py">
+class Banana:
+  def eat(self):
+    pass
+
+class Person:
+  def __init__(self):
+    self.bananas = []
+
+  def add_banana(self, banana):
+    self.bananas.append(banana)
+  
+  def eat_bananas(self):
+    for banana in self.bananas:
+      banana.eat()  # What's type of `banana` ?
+                    #  -> What function is called ?
+
+def main():
+  person = Person()
+  for a in range(1, 10):
+    person.add_banana(Banana())
+  person.eat_bananas()
+            </code></pre>
+          </li>
+        </ul>
+      </ul>
+    </div>
+
+    <div id="Approach">
+      <h3>Approach</h3>
+      <p>提案手法は3つの段階に分かれる</p>
+      <ol>
+        <li>プログラムの抽象化(中間表現化)</li>
+        <li>inter-proceduralに変数の型を推論</li>
+        <li>推論された型によってapproximate call graphを作成</li>
+      </ol>
+
+      <div id="1. プログラムの中間表現化">
+        <h4>1. プログラムの中間表現化</h4>
+        <ul>
+          <li>型推論に必要な命令のみを残す(不要な制御フロー構造は削除)</li>
+          <ul>
+            <li>assign, return, method invocationのみ残す</li>
+          </ul>
+          <li>
+            <div class="flex">
+              <div class="flex-left">
+                Before:
+                <pre><code class="language-py">
+def main():
+  person = Person()
+  for a in range(1, 10):
+    person.add_banana(Banana())
+  person.eat_bananas()
+                </code></pre>
+              </div>
+              <div>
+                After:
+                <pre><code class="language-py">
+def main():
+  person = Person()
+  a = itemOf(range(1,10))
+  person.add_banana(Banana())
+  person.eat_bananas()
+                </code></pre>
+              </div>
+            </div>
+            <ul>
+              <li><code class="language-py">itemOf</code>: collection型を引数に取り、その要素の型の集合を返す補助メソッド</li>
+              <li>for-loopを、Pythonのloopのsemanticsを保持するassignmentに変更</li>
+              <ul>
+                <li>変数<code class="language-py">a</code>の型推論が正しく行われる形</li>
+              </ul>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div id="2. inter-proceduralに変数の型を推論">
+        <h4>2. inter-proceduralに変数の型を推論</h4>
+        <p>中間表現のstatementに基づいて、型を伝搬させる</p>
+        <ul>
+          <li>assign: 右辺値から左辺値へ伝搬</li>
+          <li>method invocation: 実引数から仮引数ヘ伝搬</li>
+          <li>return: 返り値から左辺値へ伝搬</li>
+        </ul>
+      </div>
+
+      <div id="3. 推論された型によってapproximate call graphを作成">
+        <h4>3. 推論された型によってapproximate call graphを作成</h4>
+        <p>Method invocationがあるstatementからedgeを張る</p>
+      </div>
+    </div>
+
+    <div id="Advanteges of NoCFG">
+      <h3>Advanteges of NoCFG</h3>
+      <ul>
+        <li>Control-flowを考慮しない</li>
+        <ul>
+          <li>Soundnessを保持したまま、単純な表現に直して解析を行っている</li>
+        </ul>
+        <li>静的な型情報を使用しない</li>
+        <li>関数オブジェクトが変数に代入されることも制限しない</li>
+        <li>他のプログラミング言語にも適用可能</li>
+        <li><b>reflective pattarnの解析が可能</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="Theory">
+    <h2>Theory</h2>
+
+    <div id="中間表現の形式的定義">
+      <h3>中間表現の形式的定義</h3>
+      <p>(プログラムはASTで表現する)</p>
+      <ul>
+        <li>node \(N\):</li>
+        <ul>
+          <li>Assignment(\(N_A\)):</li>
+          <ul>
+            <li>左右の2つのexpressionからなる</li>
+          </ul>
+          <li>Method invocation(\(N_I\)):</li>
+          <ul>
+            <li>Target expression: <code class="language-py">f</code>, <code class="language-py">e.f</code></li>
+            <li>List of argument expression: <code class="language-py">[a, b]</code></li>
+          </ul>
+          <li>Return(\(N_R\)):</li>
+          <ul>
+            <li>1つのexpressionを持つ</li>
+          </ul>
+          <li>
+            ex.)
+            <div class="flex" style="margin-left: 15px;">
+              <div class="flex-left">
+                Before:
+                <pre><code class="language-py">
+if condition():
+  func1()
+else:
+  func2()
+                </code></pre>
+              </div>
+              <div>
+                After:
+                <pre><code class="language-py">
+condition():
+func1()
+func2()
+                </code></pre>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <li>Expression \(E\):</li>
+        <ul>
+          <li>Name:</li>
+          <ul>
+            <li>プログラムのidentifier</li>
+            <li>ex.) <code class="language-py">banana</code></li>
+          </ul>
+          <li>Member access:</li>
+          <ul>
+            <li>ex.) <code class="language-py">self.bananas</code></li>
+          </ul>
+          <li>Literal:</li>
+          <ul>
+            <li>ex.) <code class="language-py">1</code></li>
+          </ul>
+          <li>Method invocation:</li>
+        </ul>
+        <li>(Set of all types \(T\))</li>
+      </ul>
+      <p>先ほど述べた中間表現のCFGの名前を<b>SCFG</b>とする</p>
+      <ul>
+        <li>SCFGの特徴</li>
+        <ul>
+          <li>Single entry/single exit</li>
+          <li>全てのnodeは1つの親と1つの子</li>
+          <li>各nodeは\(N_A, N_I, N_R\)のどれか</li>
+          <li>全体で1つのサイクルを形成(後述)</li>
+        </ul>
+        <li>
+          ex.)
+          <div class="flex" style="margin-left: 15px;">
+            <div class="flex-left">
+              Original program:
+              <pre><code class="language-py">
+def main():
+  person = Person()
+  for a in range(1, 10):
+    person.add_banana(Banana())
+  person.eat_bananas()
+              </code></pre>
+            </div>
+            <div>
+              SCFG:<br>
+              <img src="main_func_SCFG.png" alt="" width="300px">
+            </div>
+          </div>
+        </li>
+        <li>サイクルを形成する意味</li>
+        <ul>
+          <li>SCFGにすることでstatementの順番が失われる</li>
+          <ul>
+            <li>何度も繰り返して実行して、fix pointに到達させる必要がある</li>
+          </ul>
+        </ul>
+      </ul>
+    </div>
+
+    <div id="Intra-procedural analysis">
+      <h3>Intra-procedural analysis</h3>
+      <p>構造的意味論を使って各node(statement)毎の"意味"を定義していく</p>
+
+      <div id="補助関数の定義">
+        <h4>補助関数の定義</h4>
+        <ul>
+          <li>\(\mathbf{cflow_P}(n_1,n_2)\): SCFGが\(n_1\)->\(n_2\)へのedgeがあるかどうか</li>
+          <li>\(\mathbf{scope_P} \; [N \rightarrow T]\): nodeが属している型を返す</li>
+          <ul>
+            <li>
+              <img src="main_func_SCFG.png" alt="" width="300px"><br>
+              この図中の全てのnode nに対し、\(\mathbf{scope_P}\)の返り値は[main]
+            </li>
+          </ul>
+          <li>\(\mathbf{func_P} \; [T \times {\it Name} \rightarrow T]\): ある型のattributeの型を返す</li>
+          <ul>
+            <li>
+              <pre><code class="language-py">
+class Banana:
+  def eat(self):
+    pass
+              </code></pre>
+              \(\mathbf{func_P}({\it Banana}, {\it 'eat'})\)の返り値は[Banana:eat]
+            </li>
+          </ul>
+          <li>\(\mathbf{lhs_P} \; [S \times N_A \rightarrow V]\): stateとassignment nodeから、左辺値の変数情報を返す</li>
+          <ul>
+            <li>variable \(V \; [T \times {\it Name}]\): scopeの型と識別子</li>
+          </ul>
+          <li>\(\mathbf{rhs_P} \; [S \times N_A \rightarrow {\cal P}(T)]\): stateとassignment nodeから、右辺値が取りうる型の集合を返す</li>
+          <li>\(\mathbf{control_P} \; [S \rightarrow N]\): stateが対応しているnodeを返す</li>
+          <li>\(\mathbf{data_P} \; [S \times V \rightarrow {\cal P}(T)]\): stateとvariableから、mappingされている型の集合を返す</li>
+        </ul>
+      </div>
+
+      <div id="Semanticsの定義">
+        <h4>Semanticsの定義</h4>
+        <p>これらの補助関数から構成されるnode種類毎の"意味"にしたがって、変数に対する取りうる型のmappingを求める</p>
+
+        <h5>Assignment</h5>
+        <p>
+          \begin{equation*}
+          \frac
+            {n_1 \in N_A, \mathbf{control_P}(s) = n_1, \mathbf{cflow_P}(n_1,n_2), \mathbf{lhs_P}(n_1) = v, \mathbf{scope_P}(n_1) = f}
+            {\mathbf{data}(s',f,v) = \mathbf{data}(s,f,v) \cup \mathbf{rhs_P}(s,n_1), \mathbf{control_P}(s') = n_2}
+          \end{equation*}
+        </p>
+        <p>
+          ex.)<br>
+          <div class="flex">
+            <div>
+              <img src="assignment_sample.svg" alt="" width="150px">
+            </div>
+            <div>
+              s:<br>
+              <table border="1">
+                <tr>
+                  <td>x</td>
+                  <td>{Float}</td>
+                </tr>
+                <tr>
+                  <td>y</td>
+                  <td>{Int, Str}</td>
+                </tr>
+                <tr>
+                  <td>z</td>
+                  <td>{Str}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <details>
+            <summary class="quiz">\(\mathbf{lhs_P}(n_1)\) = ?</summary>
+            \(x\)
+          </details>
+          <details>
+            <summary class="quiz">\(\mathbf{data}(s,x)\) = ?</summary>
+            {Float}
+          </details>
+          <details>
+            <summary class="quiz">\(\mathbf{rhs_P}(s,n_1)\) = ?</summary>
+            {Int, Str}
+          </details>
+          <details>
+            <summary class="quiz">\(\mathbf{data}(s',x)\) = ?</summary>
+            {Float, Int, Str}
+          </details>
+        </p>
+      </div>
+
+      <div id="解析全体の意味を定義">
+        <h4>解析全体の意味を定義</h4>
+        <ul>
+          <li>このモデルはcontrol tokenを使用している</li>
+          <ul>
+            <li>現在解析中のnodeを表す"もの"(cf. \(\mathbf{control_P}\))</li>
+          </ul>
+          <li>解析の様子</li>
+          <ol>
+            <li>解析の初めはcontrol tokenはentry edgeを指し、変数は空の集合にmappingされる</li>
+            <ul>
+              <li><img src="analysis_flow1.svg" alt="" width="200px"></li>
+            </ul>
+            <li>Control tokenがcontrol flowに沿って移動</li>
+            <li>Control tokenが次のnodeに到達(activated)</li>
+            <li>nodeのsemanticsに応じてmappingを更新</li>
+          </ol>
+          <li>解析が終わるのはfix pointに到達した時</li>
+          <li>各stepを関数\({\it step}\)と表す</li>
+          <ul>
+            <li>Non-final stateを受け取り、次のstateを返す</li>
+            <li>State \(S\): 以下の2つで構成</li>
+            <ul>
+              <li>Control tokenの位置</li>
+              <li>Data environment(変数 -> 型の集合へのmapping)</li>
+            </ul>
+          </ul>
+          <li>プログラム Pに対する解析の意味(\(\lbrack \! \lbrack P \rbrack \! \rbrack\))を以下のように定義</li>
+          <ul>
+            <li>
+              \(\lbrack \! \lbrack P \rbrack \! \rbrack = {\rm step}^k_p(s)\)<br>
+              (ただし、s: Pの初期状態, k step後にfix pointに到達している)
+            </li>
+          </ul>
+        </ul>
+      </div>
+
+      <div id="Converges to fixpoint">
+        <h4>Converges to fixpoint</h4>
+        <p>背理法で証明</p>
+        <div style="border: 1px black dotted;">
+          <p>あるプログラム Pが、fixpointへ収束しないとする。</p>
+          <p>
+            この時、以下を満たすnode \(n\)、 variable \(f,u\)、無限の数列\(i_1 < i_2 < i_3 ...\)が存在する
+            \begin{equation*}
+              \forall j: \mathbf{control_P}({s_i}_j) = n \; \land \;
+              \forall j \exists k < j: \mathbf{data_P}({s_i}_j,f,u) \neq \mathbf{data_P}({s_i}_k,f,u)
+            \end{equation*}
+          </p>
+          <p>
+            次に、各変数にmappingされた型の集合に対し、
+            \begin{equation*}
+              \forall s \in S: \mathbf{data_P}(s,f,u) \in {\cal P}(T)
+            \end{equation*}
+            つまり
+            \begin{equation*}
+              \forall k \forall l < k: \mathbf{data_P}({s_i}_l,f,u) \subseteq \mathbf{data_P}({s_i}_k,f,u) \subseteq {\cal P}(T)
+            \end{equation*}
+            よって
+            \begin{equation*}
+              \forall j \exists k < j: \mathbf{data_P}({s_i}_j,f,u) \subset \mathbf{data_P}({s_i}_k,f,u) \subseteq {\cal P}(T)
+            \end{equation*}
+            しかし\({\cal P}(T)\)は有限集合であるため、\(i_1 < i_2 < i_3 ...\)が無限に続くことに矛盾する
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="Inter-procedural Analysis">
+      <h3>Interprocedural Analysis</h3>
+      <ul>
+        <li>基本はinter-proceduralな解析(SCFG)を利用</li>
+        <!-- <li>各メソッドのSCFGを繋げて、プログラム全体のSCFGを作成していく</li> -->
+        <ul>
+          <li>各メソッドのentry nodeに向けてedgeを張り、exit nodeからedgeを張る</li>
+        </ul>
+        <li><img src="inter-procedural_SCFG.png" alt="" width="600px"></li>
+        <li>Invocation nodeは1つ以上のinter-proceduralなエッジを持つ</li>
+        <ul>
+          <li>Entry nodeは複数のincoming call edgeを持つし、exit nodeは複数のoutgoing return edgeを持つ</li>
+          <li>多態性等により、calleeを静的に1つには絞れない場合があるため</li>
+          <ul>
+            <li>mappingも、変数に対し、型の集合を割り当てていた</li>
+          </ul>
+        </ul>
+      </ul>
+
+      <div id="Stackの導入">
+        <h4>Stackの導入</h4>
+        <p>前節の"意味"の定義をそのまま拡張しただけでは、(context-insensitivityにより)実行し得ないパスが存在してしまう</p>
+        <img src="context-insensitive_example.png" alt="" width="400px">
+        <ul>
+          <li>Stack function \(\mathbf{stack_P}(s)\)を導入する</li>
+          <ul>
+            <li>\(\mathbf{stack_P}(s)\): state \(s\)でのstackを返す</li>
+          </ul>
+        </ul>
+      </div>
+
+      <div id="Semanticsの定義">
+        <h4>Semanticsの定義</h4>
+
+        <h5>Method invocation</h5>
+        <p>
+          \begin{equation*}
+          \frac
+            {n_1 \in N_I, \mathbf{control_P}(s) = n_1, \mathbf{cflow_P}(n_1,n_2)}
+            {\mathbf{control_P}(s') = n', \mathbf{stack_P}(s') = \mathbf{push_P}(\mathbf{stack_P}(s),n_2)}
+          \end{equation*}
+          <img src="method_invocation_fig.svg" alt="" width="300px">
+        </p>
+
+        <h5>Method exit</h5>
+        <p>
+          \begin{equation*}
+          \frac
+            {\mathbf{control_P}(s) = c}
+            {\mathbf{control_P}(s') = \mathbf{top_P}(\mathbf{stack_P}(s)), \mathbf{stack_P}(s') = \mathbf{pop_P}(\mathbf{stack_P}(s))}
+          \end{equation*}
+        </p>
+
+        <h5>Return</h5>
+        <ul>
+          <li>\(\mathbf{expr_p} \; [N_R \rightarrow E]\): Return nodeでのexpressionを返す</li>
+          <li>\(\mathbf{eval_p} \; [S \times E \rightarrow {\cal P}(T)]\): Stateでのexpressionを評価した結果に対する、mappingされた型の集合を返す</li>
+          <li>Special variable \(\mu\): 返り値を表すdummy変数</li>
+        </ul>
+        <p>
+          \begin{equation*}
+          \frac
+            {n_1 \in N_R, \mathbf{control_P}(s) = n_1, \mathbf{cflow_P}(n_1,n_2), \mathbf{expr_p}(n_1) = e, \mathbf{scope_P}(n_1) = f}
+            {\mathbf{data_P}(s', f, \mu) = \mathbf{data_P}(s, f, \mu) \cup \mathbf{eval_P}(s, e), \mathbf{control_P}(s') = n_2}
+          \end{equation*}
+        </p>
+        <p>
+          ex.)<br>
+          <div class="flex">
+            <div>
+              <img src="assignment_sample.svg" alt="" width="150px">
+            </div>
+            <div>
+              s:<br>
+              <table border="1">
+                <tr>
+                  <td>x</td>
+                  <td>{Float}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <details>
+            <summary class="quiz">\(\mathbf{data_P}(s,\mu)\) = ?</summary>
+            {}
+          </details>
+          <details>
+            <summary class="quiz">\(\mathbf{eval_P}(s,e)\) = ?</summary>
+            {Float}
+          </details>
+          <details>
+            <summary class="quiz">\(\mathbf{data_P}(s',\mu)\) = ?</summary>
+            {Float}
+          </details>
+        </p>
+      </div>
+
+      <!-- <div id="Semanticsの正当性の証明">
+        <h4>Semanticsの正当性の証明</h4>
+
+        <h5>初期状態の定義</h5>
+        <p>
+          \(Q\)をプログラム\(P\)のSCFGとする。この時\(Q\)の初期状態\(Q_0\)は、<br>
+          
+        </p>
+
+      </div> -->
+
+    </div>
+  </div>
+
+  <div id="Algorithm">
+    <h2>Algorithm</h2>
+    <p>2章で定義した"意味"を実装するアルゴリズムを見ていく</p>
+    <ul>
+      <li>\(\texttt{partial-state} \; [N \times S \rightarrow S]\):</li>
+      <ul>
+        <li>\(\texttt{partial-state}(n,s)\): State sから、node nのentry nodeからnまで実行した際の状態を返す</li>
+        <li><code class="language-py">state_map</code> dictionaryで再現</li>
+      </ul>
+      <li>\(\texttt{summary} \; [N \times S \rightarrow S]\):</li>
+      <ul>
+        <li>\(\texttt{summary}(n,s)\): Node nが属するメソッドの全statementを実行した結果の状態を返す</li>
+        <li>Cacheに近い(既に解析済みの関数の結果を保存・取得する)</li>
+      </ul>
+    </ul>
+
+    <p>Sharir and Pnueliに着想を得たアルゴリズム</p>
+    <ul>
+      <li>
+        <pre class="language-py line-numbers"><code>
+worklist = [(n_main_entry, ⊥)]
+state_map = {}       # N × S -> S
+state_map[n_main_entry, ⊥] = ⊥
+
+while worklist is not empty:
+  (n, s0) = worklist.getAndRemoveItem()
+  fn = scope(n)                       # node n0が属する関数
+
+  s = state_map[n, s0]
+      # Node n_entry -> nまで、s0で解析を始めた結果を取得
+
+  if n is "Method invocation":
+    ...
+  else:
+    ...
+        </code></pre>
+      </li>
+      <li>
+        <pre class="language-py line-numbers" data-start="12"><code>
+  if n is "Method invocation":
+    for callee in get_target(n, s):
+      draw_edge(n, callee)                           # CG edgeを張る
+      n_callee_entry = get_entry(callee)
+
+      if summary(n_callee_entry, s) is not defined:
+        s_callee = parameter_binding(n, s)
+        state_map[n_callee_entry, s] = s_callee
+            # parameter_bindingを含んだstateを登録
+        worklist.add(n_callee_entry, s)
+      else:
+        nn = successor(n)
+        update(s, summary(n_callee_entry, s))        # summary分を更新
+        worklist.add(nn, s)
+  else:
+    ...
+        </code></pre>
+      </li>
+      <li>
+        <pre class="language-py line-numbers" data-start="21"><code>
+  else:
+    ss = step(n, s)  # 1 step実行
+    nn = successor(n)
+
+    if state_map(nn, s0) == ss:
+      ...
+    else:
+      state_map[nn, s0] = ss
+      worklist.add(nn, s0)
+        </code></pre>
+      </li>
+      <li>
+        <pre class="language-py line-numbers" data-start="25"><code>
+    if state_map[nn, s0] == ss:         # state updateが無い -> 関数を抜ける
+      remove_map(ss, variables(fn))     # local変数のmappingを削除
+      set_summary(n_entry_fn, s0, ss)   # 「s0のstateで、n_entry_fnから解析をした結果がss」
+
+      one_of_caller = get_one_of_caller(fn)
+      for (node, state) in state_map.keys():
+        if is_successor(node, one_of_caller):       # nodeがcallerのentry node
+          if state_map[one_of_caller, state] == s0  # 保存されている状態が、このメソッド解析時の初期状態
+            state_map[node, state] = ss
+            worklist.add(node, state)
+        </code></pre>
+      </li>
+    </ul>
+
+    <div id="アルゴリズム具体例">
+      <h3>アルゴリズム具体例</h3>
+      <p>
+        <div class="flex">
+          <div class="flex-left">
+            <ul>
+              <li>最初のstatementがn0:<code class="language-py">x = 10</code>とする</li>
+              <ul>
+                <li>
+                  <details>
+                    <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
+                    ⊥
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数sの値(mappingの内容)は？</summary>
+                    ⊥
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数ssの値(mappingの内容)は？</summary>
+                    <table border="1">
+                      <tr>
+                        <td>x</td>
+                        <td>{Int}</td>
+                      </tr>
+                    </table>
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">state_map[nn, s0]の値は？</summary>
+                    None
+                  </details>
+                </li>
+                <li>36行目の後のstate_map</li>
+                <ul>
+                  <li>
+                    <table border="1">
+                      <tr>
+                        <td>(n0, ⊥)</td>
+                        <td>⊥</td>
+                      </tr>
+                      <tr>
+                        <td>(n1, ⊥)</td>
+                        <td>{x -> Int}</td>
+                      </tr>
+                    </table>
+                  </li>
+                </ul>
+                <li>37行目の後のworklist</li>
+                <ul>
+                  <li>[(n1,⊥)]</li>
+                </ul>
+              </ul>
+            </ul>
+            <ul>
+              <li>次のstatementがn1:<code class="language-py">f(x)</code>とする</li>
+              <ul>
+                <li>
+                  <details>
+                    <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
+                    ⊥
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数nの値は？</summary>
+                    n1
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数sの値(mappingの内容)は？</summary>
+                    {x -> Int}
+                  </details>
+                </li>
+                <li><code class="language-py">callee</code>: f</li>
+                <li><code class="language-py">n_callee_entry</code>: n0_f</li>
+                <li><code class="language-py">s_callee</code>: {x -> Int, arg -> Int}</li>
+                <li>
+                  <details>
+                    <summary class="quiz">18行目の後のstate_mapは？</summary>
+                    <table border="1">
+                      <tr>
+                        <td>(n0, ⊥)</td>
+                        <td>⊥</td>
+                      </tr>
+                      <tr>
+                        <td>(n1, ⊥)</td>
+                        <td>{x -> Int}</td>
+                      </tr>
+                      <tr>
+                        <td>(n0_f, {x -> Int})</td>
+                        <td>{x -> Int, arg -> Int}</td>
+                      </tr>
+                    </table>
+                    <details>
+                      <summary><code class="language-py">state_map</code>の補足</summary>
+                      <ul>
+                        <li>'call point node' × 'caller entry state' -> 'caller state'</li>
+                        <li>'this entry node' × 'caller state' -> 'this entry state'</li>
+                        <li>('current node' × 'caller state' -> 'current state')</li>
+                      </ul>
+                    </details>
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">19行目の後のworklistは？</summary>
+                    [(n0_f, {x -> Int})]
+                  </details>
+                </li>
+              </ul>
+            </ul>
+            <ul>
+              <li>次に、関数fの解析を終えたとする</li>
+              <ul>
+                <li>
+                  <details>
+                    <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
+                    {x -> Int}
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数nの値は？</summary>
+                    n0_f
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数sの値(mappingの内容)は？</summary>
+                    {x -> Int, arg -> Int}
+                  </details>
+                </li>
+                <li>summary: { (n0_f, {x -> Int}) -> {x -> Int}}</li>
+                <li>
+                  <details>
+                    <summary class="quiz">31行目を満たすstate_mapのkeyは？</summary>
+                    (n1, ⊥)
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">このうち、32行目を満たすstate_mapのkeyは？</summary>
+                    (n1, ⊥)
+                  </details>
+                </li>
+                <li>33行目の後のstate_map
+                  <table border="1">
+                    <tr>
+                      <td>(n0, ⊥)</td>
+                      <td>⊥</td>
+                    </tr>
+                    <tr>
+                      <td>(n1, ⊥)</td>
+                      <td>{x -> Int}</td>
+                    </tr>
+                    <tr>
+                      <td>(n0_f, {x -> Int})</td>
+                      <td>{x -> Int, arg -> Int}</td>
+                    </tr>
+                  </table>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">19行目の後のworklistは？</summary>
+                    [(n1, ⊥)]
+                  </details>
+                </li>
+              </ul>
+            </ul>
+            <ul>
+              <li>worklistが空でないので実行</li>
+              <ul>
+                <li>
+                  <details>
+                    <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
+                    ⊥
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数nの値は？</summary>
+                    n1
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">変数sの値(mappingの内容)は？</summary>
+                    {x -> Int}
+                  </details>
+                </li>
+                <li><code class="language-py">n_callee_entry</code>: n0_f</li>
+                <li><code class="language-py">nn</code>: n2</li>
+                <li>
+                  <details>
+                    <summary class="quiz">summary(n_callee_entry, s)の値(mappingの内容)は？</summary>
+                    {x -> Int}
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary class="quiz">23行目の後のworklistは？</summary>
+                    [(n2, {x -> Int})]
+                  </details>
+                </li>
+              </ul>
+            </ul>
+          </div>
+            <div>
+              <div class="sticky">
+              <details>
+                <summary>初期化処理</summary>
+                <pre class="language-py line-numbers" data-start="1" style="width: 300px;"><code>
+worklist = [(n_main_entry, ⊥)]
+state_map = {}       # N × S -> S
+state_map[n_main_entry, ⊥] = ⊥
+                </code></pre>
+              </details>
+              <details>
+                <summary>共通処理</summary>
+                <pre class="language-py line-numbers" data-start="4" style="width: 300px;"><code>
+while worklist is not empty:
+  (n, s0) = worklist.getAndRemoveItem()
+  fn = scope(n)
+  s = state_map[n, s0]
+
+  if n is "Method invocation":
+                </code></pre>
+              </details>
+              <details>
+                <summary>method呼出しの時</summary>
+                <pre class="language-py line-numbers" data-start="12" style="width: 300px;"><code>
+    for callee in get_target(n, s):
+      draw_edge(n, callee)
+      n_callee_entry = get_entry(callee)
+
+      if summary(n_callee_entry, s) is not defined:
+        s_callee = parameter_binding(n, s)
+        state_map[n_callee_entry, s] = s_callee
+        worklist.add(n_callee_entry, s)
+      else:
+        nn = successor(n)
+        update(s, summary(n_callee_entry, s))
+        worklist.add(nn, s)
+                </code></pre>
+              </details>
+              <details>
+                <summary>メソッド呼出し以外で、fixpoint到達済みの時</summary>
+                <pre class="language-py line-numbers" data-start="21" style="width: 300px;"><code>
+        else:
+          ss = step(n, s)  # 1 step実行
+          nn = successor(n)
+      
+          if state_map[nn, s0] == ss:
+            remove_map(ss, variables(fn))
+            set_summary(n_entry_fn, s0, ss)
+      
+            one_of_caller = get_one_of_caller(fn)
+            for (node, state) in state_map.keys():
+              if is_successor(node, one_of_caller):
+                if state_map[one_of_caller, state] == s0
+                  state_map[node, state] = ss
+                  worklist.add(node, state)
+                </code></pre>
+              </details>
+              <details>
+                <summary>それ以外の時</summary>
+                <pre class="language-py line-numbers" data-start="21" style="width: 300px;"><code>
+          else:
+            state_map[nn, s0] = ss
+            worklist.add(nn, s0)
+                </code></pre>
+              </details>
+            </div>
+          </div>
+        </div>
+      </p>
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>
+
