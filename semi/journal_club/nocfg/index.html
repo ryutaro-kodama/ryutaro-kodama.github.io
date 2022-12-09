@@ -9,6 +9,16 @@
 	<link rel="stylesheet" type="text/css" href="https://ryutaro-kodama.github.io/slides/style/prism/prism.css" />
 	<script type="text/javascript" src="https://ryutaro-kodama.github.io/slides/style/prism/prism.js"></script>
 	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    table {
+      border-collapse: collapse;
+      border: 2px solid black;
+    }
+    th, tr, td {
+      border: 1px solid black;
+    }
+  </style>
 </head>
 
 <body>
@@ -133,7 +143,7 @@ def main():
           </ul>
           <li>
             <div class="flex">
-              <div class="flex-left">
+              <div class="flex">
                 Before:
                 <pre><code class="language-py">
 def main():
@@ -181,8 +191,8 @@ def main():
       </div>
     </div>
 
-    <div id="Advanteges of NoCFG">
-      <h3>Advanteges of NoCFG</h3>
+    <div id="Advantages of NoCFG">
+      <h3>Advantages of NoCFG</h3>
       <ul>
         <li>Control-flowを考慮しない</li>
         <ul>
@@ -191,7 +201,7 @@ def main():
         <li>静的な型情報を使用しない</li>
         <li>関数オブジェクトが変数に代入されることも制限しない</li>
         <li>他のプログラミング言語にも適用可能</li>
-        <li><b>reflective pattarnの解析が可能</b></li>
+        <!-- <li><b>reflective pattarnの解析が可能</b></li> -->
       </ul>
     </div>
   </div>
@@ -220,8 +230,8 @@ def main():
           </ul>
           <li>
             ex.)
-            <div class="flex" style="margin-left: 15px;">
-              <div class="flex-left">
+            <div class="flex" style="margin: 15px;">
+              <div class="flex">
                 Before:
                 <pre><code class="language-py">
 if condition():
@@ -271,8 +281,8 @@ func2()
         </ul>
         <li>
           ex.)
-          <div class="flex" style="margin-left: 15px;">
-            <div class="flex-left">
+          <div class="flex" style="margin: 15px;">
+            <div class="flex">
               Original program:
               <pre><code class="language-py">
 def main():
@@ -554,16 +564,24 @@ class Banana:
         </p>
       </div>
 
-      <!-- <div id="Semanticsの正当性の証明">
-        <h4>Semanticsの正当性の証明</h4>
+      <div id="Soundnessの大雑把な証明">
+        <h4>Soundnessの大雑把な証明</h4>
+        <ul>
+          <li>方針</li>
+          <ul>
+            <li>SCFGのnode列に対し、帰納法を適用して証明を行う</li>
+          </ul>
+          <ul>
+            <li>
+              <img src="prove_soundness1.svg" alt="" width="400px">
+            </li>
+            <li>
+              <img src="prove_soundness2.svg" alt="" width="400px">
+            </li>
+          </ul>
+        </ul>
 
-        <h5>初期状態の定義</h5>
-        <p>
-          \(Q\)をプログラム\(P\)のSCFGとする。この時\(Q\)の初期状態\(Q_0\)は、<br>
-          
-        </p>
-
-      </div> -->
+      </div>
 
     </div>
   </div>
@@ -575,7 +593,8 @@ class Banana:
       <li>\(\texttt{partial-state} \; [N \times S \rightarrow S]\):</li>
       <ul>
         <li>\(\texttt{partial-state}(n,s)\): State sから、node nのentry nodeからnまで実行した際の状態を返す</li>
-        <li><code class="language-py">state_map</code> dictionaryで再現</li>
+        <li>解析の過程で、状態を保存(snapshot的な)</li>
+        <li>(<code class="language-py">state_map</code> dictionaryで表現)</li>
       </ul>
       <li>\(\texttt{summary} \; [N \times S \rightarrow S]\):</li>
       <ul>
@@ -594,10 +613,10 @@ state_map[n_main_entry, ⊥] = ⊥
 
 while worklist is not empty:
   (n, s0) = worklist.getAndRemoveItem()
-  fn = scope(n)                       # node n0が属する関数
+  fn = scope(n)               # node n0が属する関数
 
   s = state_map[n, s0]
-      # Node n_entry -> nまで、s0で解析を始めた結果を取得
+      # n_entry -> nまで、s0で解析を始めた結果を取得
 
   if n is "Method invocation":
     ...
@@ -609,7 +628,7 @@ while worklist is not empty:
         <pre class="language-py line-numbers" data-start="12"><code>
   if n is "Method invocation":
     for callee in get_target(n, s):
-      draw_edge(n, callee)                           # CG edgeを張る
+      draw_edge(n, callee)           # CG edgeを張る
       n_callee_entry = get_entry(callee)
 
       if summary(n_callee_entry, s) is not defined:
@@ -619,7 +638,7 @@ while worklist is not empty:
         worklist.add(n_callee_entry, s)
       else:
         nn = successor(n)
-        update(s, summary(n_callee_entry, s))        # summary分を更新
+        update(s, summary(n_callee_entry, s))  # summary分を更新
         worklist.add(nn, s)
   else:
     ...
@@ -631,7 +650,7 @@ while worklist is not empty:
     ss = step(n, s)  # 1 step実行
     nn = successor(n)
 
-    if state_map(nn, s0) == ss:
+    if state_map(nn, s0) == ss:   # state updateがあるか否か
       ...
     else:
       state_map[nn, s0] = ss
@@ -658,7 +677,8 @@ while worklist is not empty:
       <h3>アルゴリズム具体例</h3>
       <p>
         <div class="flex">
-          <div class="flex-left">
+          <div class="flex-left" >
+            <div style="height: 100vh; overflow-y: scroll;">
             <ul>
               <li>最初のstatementがn0:<code class="language-py">x = 10</code>とする</li>
               <ul>
@@ -685,12 +705,8 @@ while worklist is not empty:
                     </table>
                   </details>
                 </li>
-                <li>
-                  <details>
-                    <summary class="quiz">state_map[nn, s0]の値は？</summary>
-                    None
-                  </details>
-                </li>
+                <li><code class="language-py">nn</code>: n1</li>
+                <li><code class="language-py">state_map[nn, s0]</code>: None</li>
                 <li>36行目の後のstate_map</li>
                 <ul>
                   <li>
@@ -774,24 +790,11 @@ while worklist is not empty:
             <ul>
               <li>次に、関数fの解析を終えたとする</li>
               <ul>
-                <li>
-                  <details>
-                    <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
-                    {x -> Int}
-                  </details>
-                </li>
-                <li>
-                  <details>
-                    <summary class="quiz">変数nの値は？</summary>
-                    n0_f
-                  </details>
-                </li>
-                <li>
-                  <details>
-                    <summary class="quiz">変数sの値(mappingの内容)は？</summary>
-                    {x -> Int, arg -> Int}
-                  </details>
-                </li>
+                <li><code class="language-py">s0</code>: {x -> Int}</li>
+                <li><code class="language-py">n</code>: n0_f</li>
+                <li><code class="language-py">s</code>: {x -> Int, arg -> Int}</li>
+                <li><code class="language-py">ss</code>: {x -> Int, arg -> Int}</li>
+                <li><code class="language-py">ss(after remove)</code>: {x -> Int}</li>
                 <li>summary: { (n0_f, {x -> Int}) -> {x -> Int}}</li>
                 <li>
                   <details>
@@ -805,6 +808,7 @@ while worklist is not empty:
                     (n1, ⊥)
                   </details>
                 </li>
+                <li><code class="language-py">state</code>: {x -> Int}</li>
                 <li>33行目の後のstate_map
                   <table border="1">
                     <tr>
@@ -819,12 +823,16 @@ while worklist is not empty:
                       <td>(n0_f, {x -> Int})</td>
                       <td>{x -> Int, arg -> Int}</td>
                     </tr>
+                    <tr>
+                      <td>(n1, {x -> Int})</td>
+                      <td>{x -> Int}</td>
+                    </tr>
                   </table>
                 </li>
                 <li>
                   <details>
                     <summary class="quiz">19行目の後のworklistは？</summary>
-                    [(n1, ⊥)]
+                    [(n1, {x -> Int})]
                   </details>
                 </li>
               </ul>
@@ -835,7 +843,7 @@ while worklist is not empty:
                 <li>
                   <details>
                     <summary class="quiz">変数s0の値(mappingの内容)は？</summary>
-                    ⊥
+                    {x -> Int}
                   </details>
                 </li>
                 <li>
@@ -851,6 +859,7 @@ while worklist is not empty:
                   </details>
                 </li>
                 <li><code class="language-py">n_callee_entry</code>: n0_f</li>
+                <li>summary: { (n0_f, {x -> Int}) -> {x -> Int}}</li>
                 <li><code class="language-py">nn</code>: n2</li>
                 <li>
                   <details>
@@ -867,8 +876,9 @@ while worklist is not empty:
               </ul>
             </ul>
           </div>
+        </div>
             <div>
-              <div class="sticky">
+              <div style="height: 100vh; overflow-y: scroll;">
               <details>
                 <summary>初期化処理</summary>
                 <pre class="language-py line-numbers" data-start="1" style="width: 300px;"><code>
@@ -938,6 +948,373 @@ while worklist is not empty:
       </p>
 
     </div>
+
+    <div id="Reflective API support">
+      <h3>Reflective API support</h3>
+
+      <p>上記アルゴリズムは他のstring values analysisと組み合わせることで、reflectionにも対応することができる</p>
+      <pre><code class="language-py">
+def visit(self, node):
+  method = 'visit_' + node.__class__.__name__
+  visitor = getattr(self, method, self.generic_visit)
+  return visitor(node)
+      </code></pre>
+      <ul>
+        <li>特定の変数に対し、mappingさせる値を"型の集合" -> "リテラル等"に変更すると上手くいく</li>
+        <ul>
+          <li><code class="language-py">node</code>がast moduleの<code class="language-py">If</code>型とする</li>
+          <li><code class="language-py">node.__class__.__name__</code> -> <s>Str</s> "If"</li>
+          <li><code class="language-py">method</code> -> <s>Str</s> "visit_if"</li>
+        </ul>
+      </ul>
+    </div>
+
+  </div>
+
+  <div id="Evaluation">
+    <h2>Evaluation</h2>
+    <p>NoCFGをPythonとC#のリアル検体で評価する</p>
+
+    <div id="Implementation">
+      <h3>Implementation</h3>
+      <ul>
+        <li>Javaで実装</li>
+        <li>実験環境</li>
+        <ul>
+          <li>Java HotSpot(TM) 64-Bit server VM</li>
+          <li>Thinkpad T480(Windows OS)</li>
+          <li>Heap上限: 8GB</li>
+        </ul>
+      </ul>
+    </div>
+
+    <div id="Python Evaluation">
+      <h3>Python Evaluation</h3>
+      <ul>
+        <li>(検体の選択基準は不明確)</li>
+        <li>正解セットはpycallgraphの解析結果</li>
+        <ul>
+          <li>pycallgraph: 動的CG解析器</li>
+          <li>検体に付属のtest caseで解析したものを正解セットとする</li>
+        </ul>
+        <li>
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th style="border: dotted;">Files</th>
+                  <th style="border: dotted;">Entry points</th>
+                  <th style="border: dotted;">LOC</th>
+                  <th style="border: dotted;">Time(s)</th>
+                  <th style="border-right: dotted;">Matched</th>
+                  <th style="border: dotted;">Over appro.</th>
+                  <th style="border: dotted;">Missed</th>
+                  <th style="border-right: dotted;">Precision</th>
+                  <th style="border: dotted;">Recall</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>pytime</td>
+                  <td style="border: dotted;">6</td>
+                  <td style="border: dotted;">6</td>
+                  <td style="border: dotted;">573</td>
+                  <td style="border-left: dotted;">16</td>
+                  <td style="border: dotted;">60</td>
+                  <td style="border: dotted;">12</td>
+                  <td style="border-left: dotted;">0</td>
+                  <td style="border: dotted;">83.33%</td>
+                  <td style="border: dotted;">100.00%</td>
+                </tr>
+                <tr>
+                  <td>algoritdms</td>
+                  <td style="border: dotted;">388</td>
+                  <td style="border: dotted;">392</td>
+                  <td style="border: dotted;">12336</td>
+                  <td style="border-left: dotted;">800</td>
+                  <td style="border: dotted;">810</td>
+                  <td style="border: dotted;">94</td>
+                  <td style="border-left: dotted;">109</td>
+                  <td style="border: dotted;">89.60%</td>
+                  <td style="border: dotted;">88.14%</td>
+                </tr>
+                <tr>
+                  <td>purl</td>
+                  <td style="border: dotted;">11</td>
+                  <td style="border: dotted;">102</td>
+                  <td style="border: dotted;">839</td>
+                  <td style="border-left: dotted;">65</td>
+                  <td style="border: dotted;">232</td>
+                  <td style="border: dotted;">20</td>
+                  <td style="border-left: dotted;">9</td>
+                  <td style="border: dotted;">92.06%</td>
+                  <td style="border: dotted;">96.27%</td>
+                </tr>
+                <tr>
+                  <td>gspread</td>
+                  <td style="border: dotted;">9</td>
+                  <td style="border: dotted;">41</td>
+                  <td style="border: dotted;">1442</td>
+                  <td style="border-left: dotted;">99</td>
+                  <td style="border: dotted;">189</td>
+                  <td style="border: dotted;">28</td>
+                  <td style="border-left: dotted;">34</td>
+                  <td style="border: dotted;">87.10%</td>
+                  <td style="border: dotted;">84.75%</td>
+                </tr>
+                <tr>
+                  <td>wifi</td>
+                  <td style="border: dotted;">15</td>
+                  <td style="border: dotted;">48</td>
+                  <td style="border: dotted;">1031</td>
+                  <td style="border-left: dotted;">19</td>
+                  <td style="border: dotted;">70</td>
+                  <td style="border: dotted;">3</td>
+                  <td style="border-left: dotted;">16</td>
+                  <td style="border: dotted;">95.89%</td>
+                  <td style="border: dotted;">81.40%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li>平均; precision: 89.66%, recall: 89.01%</li>
+        <li>pycallgraphでは実行されなかったfeasibleなpathがあるので、実際のpresicionはもっと高いハズ</li>
+        <ul>
+          <li>ex.) エラー処理時のインスタンス作成</li>
+        </ul>
+        <li>Missed Edgeの例: reflective APIによるメソッド呼び出し</li>
+      </ul>
+    </div>
+
+    <div id="C# Evaluation">
+      <h3>C# Evaluation</h3>
+      <ul>
+        <li>脆弱性のあるメソッド(CVE-2019-0820)を呼び出しているか確認</li>
+        <ul>
+          <li>CGを使いたいuse-caseとして、脆弱性のあるメソッドを呼び出しているか確認したい場合があるため</li>
+        </ul>
+        <li>脆弱性のあるメソッドを含むlibraryを使っているプロジェクトのうち、実際に脆弱性のあるメソッドを呼び出しているものを確認</li>
+        <li>
+          <table>
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>LOC</th>
+                <th>Valnerable</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: solid; border-width: thin">App.Metrics.Core</td>
+                <td style="border: solid; border-width: thin">182,556</td>
+                <td style="border: solid; border-width: thin">Yes</td>
+                <td style="border: solid; border-width: thin">273</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">CoreRPC.AspNetCore</td>
+                <td style="border: solid; border-width: thin">377,403</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">1203</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">EasyCaching.Bus.RabbitMQ</td>
+                <td style="border: solid; border-width: thin">83,040</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">480</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">EPPlus</td>
+                <td style="border: solid; border-width: thin">413,377</td>
+                <td style="border: solid; border-width: thin">Yes</td>
+                <td style="border: solid; border-width: thin">871</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">EastReport.Data.RavenDB</td>
+                <td style="border: solid; border-width: thin">752,664</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">218</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">Nucleus.Web.Vue</td>
+                <td style="border: solid; border-width: thin">2,017,040</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">66</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">Ooui.AspNetCore</td>
+                <td style="border: solid; border-width: thin">839,959</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">328</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">RawRabbit.Enrichers.MessagePack</td>
+                <td style="border: solid; border-width: thin">104,003</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">41</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">SmartCode.ETL.PostgreSql</td>
+                <td style="border: solid; border-width: thin">1,214,542</td>
+                <td style="border: solid; border-width: thin">No</td>
+                <td style="border: solid; border-width: thin">64</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">SmartCode.Generator</td>
+                <td style="border: solid; border-width: thin">1,238,470</td>
+                <td style="border: solid; border-width: thin">Yes</td>
+                <td style="border: solid; border-width: thin">124</td>
+              </tr>
+              <tr>
+                <td style="border: solid; border-width: thin">YoutubeExplode</td>
+                <td style="border: solid; border-width: thin">197,448</td>
+                <td style="border: solid; border-width: thin">Yes</td>
+                <td style="border: solid; border-width: thin">821</td>
+              </tr>
+            </tbody>
+          </table>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="関連研究">
+    <h2>関連研究</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Language</th>
+          <th>Static/Dynamic</th>
+          <th>Approach</th>
+          <th>Precision</th>
+          <th>Scalable</th>
+          <th>Soundness</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Reachability Analysis[LOPLAS '92]</td>
+          <td>C/C++/Fortran</td>
+          <td>Static</td>
+          <td>Name-based</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-so">△</td>
+        </tr>
+        <tr>
+          <td>Class Hierarchy Analysis[ECOOP '95]</td>
+          <td>Cecil</td>
+          <td>Static</td>
+          <td>Name-based</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-so">△</td>
+        </tr>
+        <tr>
+          <td>Rapid Type Analysis['96]</td>
+          <td>C++</td>
+          <td>Static</td>
+          <td>Name-based</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-so">△</td>
+        </tr>
+        <tr>
+          <td>Control Flow Analysis[PEPM '91]</td>
+          <td>Scheme</td>
+          <td>Static</td>
+          <td>Pointer</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+        <tr>
+          <td>TAJS[SAS '09]</td>
+          <td>JavaScript</td>
+          <td>Static</td>
+          <td>Type</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+        <tr>
+          <td>Jang and Choe[SAC '09]</td>
+          <td>JavaScript</td>
+          <td>Static</td>
+          <td>Pointer</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+        <tr>
+          <td>Sridharan et al.[ECOOP '12]</td>
+          <td>JavaScript</td>
+          <td>Static</td>
+          <td>Pointer</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+        <tr>
+          <td>Code2Graph[ASE '18]</td>
+          <td>Python</td>
+          <td>Static</td>
+          <td>Name-based</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-ng">✕</td>
+        </tr>
+        <tr>
+          <td>Pyan</td>
+          <td>Python</td>
+          <td>Static</td>
+          <td>Value</td>
+          <td class="ref-ng">Low</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-ng">✕</td>
+        </tr>
+        <tr>
+          <td><b>NoCFG[SAC '22]</b></td>
+          <td>Python</td>
+          <td>Static</td>
+          <td>Type</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+        <tr>
+          <td><b>提案手法</b></td>
+          <td>Python</td>
+          <td>Static</td>
+          <td>Type</td>
+          <td class="ref-ok">High</td>
+          <td class="ref-so">Mid</td>
+          <td class="ref-ok">〇</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="提案手法との関係">
+    <h2>提案手法との関係</h2>
+    <ul>
+      <li>NoCFGはflow-insensitive, context-insensitive, path-insensitive</li>
+      <ul>
+        <li>提案手法との差別化</li>
+        <li>ただし提案手法とNoCFGは目指す方向性が違う</li>
+        <ul>
+          <li>NoCFGは、「速く、様々な言語で使える」手法</li>
+        </ul>
+        <li>PyCGの方が直接の競争相手か</li>
+      </ul>
+      <li>「reflectionを適切に扱うために、精度を上げた解析を行う」というアイデアは使えそう</li>
+      <ul>
+        <li>ex.) <code class="language-py">getattr</code>メソッドの引数に対してbackward解析を行う</li>
+      </ul>
+    </ul>
 
   </div>
 
